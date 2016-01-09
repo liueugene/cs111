@@ -88,12 +88,14 @@ int main(int argc, char *argv[])
                     }
                 }
                 //call the command via execvp
+                free(args);
                 break;
             default:
                 break;
 
         }
     }
+    free(filesystem); 
 }
 
 int Argument_Amount(int argc, char* argv[], int long_index)
