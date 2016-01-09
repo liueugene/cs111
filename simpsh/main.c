@@ -9,6 +9,7 @@ int open_flags = 0;
 int no_of_files = 0;
 int max_files = 15;
 int* filesystem = malloc(max_files * sizeof(int));
+bool verbose_flag2 = 0;
 
 int main(int argc, char *argv[])
 {
@@ -22,47 +23,96 @@ int main(int argc, char *argv[])
     
     int option_index = 0;
     int opt;
-    int last_optind = 1;
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
+        int args = Argument_Amount(argc, argv, *option_index);
         switch (opt) {
             case 'r':
+                if (args > 2) {
+                    //error
+                }
+                printf("\n");
+                verbose_flag2 = 0;
                 open_flags |= O_RDONLY;
                 open_file(optarg, open_flags);
                 break;
             case 'w':
+                if (args > 2) {
+                    //error
+                }
+                printf("\n");
+                verbose_flag2 = 0;
                 open_flags |= O_WRONLY;
                 open_file(optarg, open_flags);
                 break;
             case 'c':
+                if (args < 5) {
+                    //error
+                }
+                printf("\n");
+                verbose_flag2 = 0;
                 //get the stdin file descriptor
-                int stdin_logical_fid = argv[last_optind + 1];
+                optind--;
+                int stdin_logical_fid = argv[optind];
                 int stdin_real_fid = filesystem[stdin_logical_fid];
                 //get the stdout file descriptor
-                int stdout_logical_fid = argv[last_optind + 2];
+                optind++;
+                int stdout_logical_fid = argv[optind];
                 int stdout_real_fid = filesystem[stdout_logical_fid];
                 //get the stderr file descriptor
-                int stderr_logical_fid = argv[last_optind + 3];
+                optind++;
+                int stderr_logical_fid = argv[optind];
                 int stderr_real_fid = filesystem[stderr_logical_fid];
                 //get the command string
-                char* command = argv[temp_index + 4];
-                //find the number of flags
-                int num_args = optind - last_optind;
-                num_args = num_args - 5;
+                optind++;
+                char* command = argv[temp_index];
+                //find the number of args
+                int num_args = args - 5;
                 //get the args
                 char** args = malloc((num_args + 1) * sizeof(char*));
                 args[0] = command;
                 if (num_args != 0) {
-                    int i = 5;
-                    while((last_optind + i) < optind); {
-                        args[i - 4] = argc[last_optind + i];
+                    int i = 1;
+                    while(i <= num_args) {
+                        args[i] = argv[optind];
+                        optind++;
                         i++;
                     }
                 }
                 //call the command via execvp
+                last_optind = optind;
                 break;
+            default:
+                opt = getopt_long(argc, argv, "", options, &option_index));
+                break;
+
         }
-        last_optind = optind;
     }
+}
+
+int Argument_Amount(int argc, char* argv[], int long_index)
+{
+    int count = 0;
+    if (verbose_flag) {
+        if (verbose_flag2) {
+            printf(" ");
+        }
+        else {
+            verbose_flag2 = 1;
+        }
+        printf("%s", argv[long_index]);
+    }
+    count++;
+    while((argv[long_index + count][0] != '-') || (argv[long_index + count][1] != '-')) {
+        if (verbose_flag) {
+            printf(" %s", argv[long_index + count]);
+        }
+        count++;
+        if ((long_index + count) == argc) {
+            break;
+        }
+    }
+
+    return count;
 }
 
