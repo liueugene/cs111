@@ -8,31 +8,35 @@ int verbose_flag = 0;
 int open_flags = 0;
 int no_of_files = 0;
 int max_files = 15;
-int* filesystem = malloc(max_files * sizeof(int));
-bool verbose_flag2 = 0;
+int* filesystem;
+int verbose_flag2 = 0;
 
 int main(int argc, char *argv[])
 {
+    filesystem = malloc(max_files * sizeof(int));
     struct option options[] =
     {
         {"rdonly", required_argument, NULL, 'r'},
         {"wronly", required_argument, NULL, 'w'},
         {"command", required_argument, NULL, 'c'},
         {"verbose", no_argument, &verbose_flag, 1}
-    }
+    };
     
     int option_index = 0;
     int opt;
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
-        int args = Argument_Amount(argc, argv, *option_index);
+        printf("%d\n", option_index);
+        int args = Argument_Amount(argc, argv, option_index);
         switch (opt) {
             case 'r':
                 if (args > 2) {
                     //error
                 }
-                printf("\n");
-                verbose_flag2 = 0;
+                if (verbose_flag) {
+                    printf("\n");
+                    verbose_flag2 = 0;
+                }
                 open_flags |= O_RDONLY;
                 open_file(optarg, open_flags);
                 break;
@@ -40,8 +44,10 @@ int main(int argc, char *argv[])
                 if (args > 2) {
                     //error
                 }
-                printf("\n");
-                verbose_flag2 = 0;
+                if (verbose_flag) {
+                    printf("\n");
+                    verbose_flag2 = 0;
+                }
                 open_flags |= O_WRONLY;
                 open_file(optarg, open_flags);
                 break;
@@ -49,8 +55,10 @@ int main(int argc, char *argv[])
                 if (args < 5) {
                     //error
                 }
-                printf("\n");
-                verbose_flag2 = 0;
+                if (verbose_flag) {
+                    printf("\n");
+                    verbose_flag2 = 0;
+                }
                 //get the stdin file descriptor
                 optind--;
                 int stdin_logical_fid = argv[optind];
@@ -65,7 +73,7 @@ int main(int argc, char *argv[])
                 int stderr_real_fid = filesystem[stderr_logical_fid];
                 //get the command string
                 optind++;
-                char* command = argv[temp_index];
+                char* command = argv[optind];
                 //find the number of args
                 int num_args = args - 5;
                 //get the args
@@ -80,10 +88,8 @@ int main(int argc, char *argv[])
                     }
                 }
                 //call the command via execvp
-                last_optind = optind;
                 break;
             default:
-                opt = getopt_long(argc, argv, "", options, &option_index));
                 break;
 
         }
