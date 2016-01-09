@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
             break;
         
         switch (opt) {
-        
+            //random comment
             case 'r':
                 open_flags |= O_RDONLY;
                 open_file(optarg, open_flags);
@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
         
         if (opt != 'c')
             opt = getopt_long(argc, argv, "", options, &option_index);
+        else
+            opt = temp_opt;
     }
 }
 
