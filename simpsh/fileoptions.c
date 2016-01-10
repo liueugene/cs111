@@ -31,33 +31,16 @@ int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr
 {
     pid_t pid = fork();
     
+    int fds = { 0, 2 };
+    
     //child process
     if (pid == 0) {
-        
-        int stdin_copy = dup(0);
-        int stdout_copy = dup(1);
-        int stderr_copy = dup(2);
-        
-        close(0);
-        close(1);
-        close(2);
         
         dup2(stdin_fd, 0);
         dup2(stdout_fd, 1);  
         dup2(stderr_fd, 2);
         
         execvp(argv[0], argv);
-        
-        close(stdin_fd);
-        close(stdout_fd);
-        close(stderr_fd);
-        
-        dup2(stdin_copy, 0);
-        dup2(stdout_copy, 1);
-        dup2(stderr_copy, 2);
-        close(stdin_copy);
-        close(stdout_copy);
-        close(stderr_copy);
         
         exit(0);
         
