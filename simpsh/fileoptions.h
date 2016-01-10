@@ -5,11 +5,12 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 extern int no_of_files;
 extern int max_files;
 extern int *filesystem;
 
-void open_file(char *filename, int flags);
+int open_file(char *filename, int flags);
 
 #endif

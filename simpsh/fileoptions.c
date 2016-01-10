@@ -1,6 +1,6 @@
 #include "fileoptions.h"
 
-void open_file(char *filename, int flags)
+int open_file(char *filename, int flags)
 {
     //adding a file:
     if (no_of_files == max_files) {
@@ -12,7 +12,17 @@ void open_file(char *filename, int flags)
             }
             filesystem = temp_filesystem;
     }
-
-    filesystem[no_of_files] = open(filename, flags);//put code here
+    int temp_fd_holder = open(filename, flags);
+    if (temp_fd_holder == -1) {
+        return 0;
+    }
+    filesystem[no_of_files] = temp_fd_holder;
+ /* char* test = malloc(10 * sizeof(char));
+    if (read(filesystem[no_of_files], test, 10) == -1) {
+        fprintf(stderr, "%s\n", "Unable to read file.");
+    }
+    printf("%s\n", test);
+    free(test); */
     no_of_files++;
+    return 1;
 }
