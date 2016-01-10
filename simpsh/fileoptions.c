@@ -26,3 +26,8 @@ int open_file(char *filename, int flags)
     no_of_files++;
     return 1;
 }
+
+int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr_fd)
+{
+    
+}

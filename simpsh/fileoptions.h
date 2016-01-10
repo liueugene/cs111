@@ -13,4 +13,6 @@ extern int *filesystem;
 
 int open_file(char *filename, int flags);
 
+int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr_fd);
+
 #endif

@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     char* arg_error = "Incorrect number of arguments.";
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
-        printf("\n\n%d\n\n", optind);
         index = optind - 1;
         switch (opt) {
             case 'r':
@@ -52,7 +51,6 @@ int main(int argc, char *argv[])
             print_option(argc, argv, index, stdout);
         }
         int args = argument_amount(argc, argv, index);
-        printf("args: %d", args);
         switch (opt) {
             case 'r':
                 if (args > 2) {
@@ -111,16 +109,16 @@ int main(int argc, char *argv[])
                 }
                 //get the stdin file descriptor
                 index++;
-                int stdin_logical_fid = strtol(argv[index], NULL, 10);
-                int stdin_real_fid = filesystem[stdin_logical_fid];
+                int stdin_logical_fd = strtol(argv[index], NULL, 10);
+                int stdin_real_fd = filesystem[stdin_logical_fd];
                 //get the stdout file descriptor
                 index++;
-                int stdout_logical_fid = strtol(argv[index], NULL, 10);
-                int stdout_real_fid = filesystem[stdout_logical_fid];
+                int stdout_logical_fd = strtol(argv[index], NULL, 10);
+                int stdout_real_fd = filesystem[stdout_logical_fd];
                 //get the stderr file descriptor
                 index++;
-                int stderr_logical_fid = strtol(argv[index], NULL, 10);
-                int stderr_real_fid = filesystem[stderr_logical_fid];
+                int stderr_logical_fd = strtol(argv[index], NULL, 10);
+                int stderr_real_fd = filesystem[stderr_logical_fd];
                 //get the command string
                 index++;
                 char* command = argv[index];
@@ -136,7 +134,7 @@ int main(int argc, char *argv[])
                         i++;
                     }
                 }
-                //call the command via execvp
+                call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
                 free(args_list);
                 open_flags = 0;  //??????????????????????????
                 break;
@@ -155,10 +153,10 @@ int argument_amount(int argc, char* argv[], int long_index)
         return count;
     }
     while((argv[long_index + count][0] != '-') || (argv[long_index + count][1] != '-')) {
+        count++;
         if ((long_index + count) == argc) {
             break;
         }
-        count++;
     }
     return count;
 }
