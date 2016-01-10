@@ -140,13 +140,14 @@ int main(int argc, char *argv[])
                 //get the args
                 char** args_list = malloc((num_args + 1) * sizeof(char*));
                 args_list[0] = command;
+                int i = 1;
                 if (num_args != 0) {
-                    int i = 1;
                     while(i <= num_args) {
                         args_list[i] = argv[index + i];
                         i++;
                     }
                 }
+                optind = index + i;
                 call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
                 free(args_list);
                 open_flags = 0;  //??????????????????????????

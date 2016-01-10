@@ -31,8 +31,6 @@ int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr
 {
     pid_t pid = fork();
     
-    int fds = { 0, 2 };
-    
     //child process
     if (pid == 0) {
         
