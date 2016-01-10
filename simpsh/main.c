@@ -144,8 +144,10 @@ int main(int argc, char *argv[])
                 if (num_args != 0) {
                     while(i <= num_args) {
                         args_list[i] = argv[index + i];
+                        printf("%s\n", args_list[i]);
                         i++;
                     }
+                    
                 }
                 optind = index + i;
                 call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
