@@ -4,8 +4,7 @@
 #include <getopt.h>
 #include "fileoptions.h"
 
-int argument_amount(int argc, char* argv[], int long_index);
-int print_option(int argc, char* argv[], int long_index, FILE *print_to);
+int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_to);
 
 int verbose_flag = 0;
 int verbose_flag2 = 0;
@@ -48,13 +47,12 @@ int main(int argc, char *argv[])
             else {
                 verbose_flag2 = 1;
             }
-            print_option(argc, argv, index, stdout);
         }
-        int args = argument_amount(argc, argv, index);
+        int args = cycle_option(argc, argv, index, verbose_flag, stdout);
         switch (opt) {
             case 'r':
                 if (args > 2) {
-                    print_option(argc, argv, index, stderr);
+                    cycle_option(argc, argv, index, 1, stderr);
                     fprintf(stderr, ": %s\n", arg_error);
                     break;
                 }
@@ -64,7 +62,7 @@ int main(int argc, char *argv[])
                 }
                 open_flags |= O_RDONLY;
                 if (!open_file(optarg, open_flags)) {
-                    print_option(argc, argv, index, stderr);
+                    cycle_option(argc, argv, index, 1, stderr);
                     fprintf(stderr, ": ");
                     perror(NULL);
                 }
@@ -72,7 +70,7 @@ int main(int argc, char *argv[])
                 break;
             case 'w':
                 if (args > 2) {
-                    print_option(argc, argv, index, stderr);
+                    cycle_option(argc, argv, index, 1, stderr);
                     fprintf(stderr, ": %s\n", arg_error);
                     break;
                 }
@@ -82,7 +80,7 @@ int main(int argc, char *argv[])
                 }
                 open_flags |= O_WRONLY;
                 if(!open_file(optarg, open_flags)) {
-                    print_option(argc, argv, index, stderr);
+                    cycle_option(argc, argv, index, 1, stderr);
                     fprintf(stderr, ": ");
                     perror(NULL);
                 }
@@ -90,14 +88,14 @@ int main(int argc, char *argv[])
                 break;
             case 'v':
                 if (args != 1) {
-                    print_option(argc, argv, index, stderr);
+                    cycle_option(argc, argv, index, 1, stderr);
                     fprintf(stderr, ": %s\n", arg_error);
                 }
                 verbose_flag = 1;
                 break;
             case 'c':
                 if (args < 5) {
-                    print_option(argc, argv, index, stderr);
+                    cycle_option(argc, argv, index, 1, stderr);
                     fprintf(stderr, ": %s\n", arg_error);
                     printf("\n");
                     verbose_flag2 = 0;
@@ -110,14 +108,29 @@ int main(int argc, char *argv[])
                 //get the stdin file descriptor
                 index++;
                 int stdin_logical_fd = strtol(argv[index], NULL, 10);
+                if (stdin_logical_fd >= no_of_files) {
+                    cycle_option(argc, argv, index - 1, 1, stderr);
+                    fprintf(stderr, ": %s\n", "Invalid file descriptor number for stdin.");
+                    break;
+                }
                 int stdin_real_fd = filesystem[stdin_logical_fd];
                 //get the stdout file descriptor
                 index++;
                 int stdout_logical_fd = strtol(argv[index], NULL, 10);
+                if (stdout_logical_fd >= no_of_files) {
+                    cycle_option(argc, argv, index - 2, 1, stderr);
+                    fprintf(stderr, ": %s\n", "Invalid file descriptor number for stdout.");
+                    break;
+                }
                 int stdout_real_fd = filesystem[stdout_logical_fd];
                 //get the stderr file descriptor
                 index++;
                 int stderr_logical_fd = strtol(argv[index], NULL, 10);
+                if (stderr_logical_fd >= no_of_files) {
+                    cycle_option(argc, argv, index - 3, 1, stderr);
+                    fprintf(stderr, ": %s\n", "Invalid file descriptor number for stderr.");
+                    break;
+                }
                 int stderr_real_fd = filesystem[stderr_logical_fd];
                 //get the command string
                 index++;
@@ -146,30 +159,19 @@ int main(int argc, char *argv[])
     free(filesystem); 
 }
 
-int argument_amount(int argc, char* argv[], int long_index)
+int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_to)
 {
+    if (print) {
+        fprintf(print_to, "%s", argv[long_index]);
+    }
     int count = 1;
     if ((long_index + count) == argc) {
         return count;
     }
     while((argv[long_index + count][0] != '-') || (argv[long_index + count][1] != '-')) {
-        count++;
-        if ((long_index + count) == argc) {
-            break;
+        if (print) {
+            fprintf(print_to, " %s", argv[long_index + count]);
         }
-    }
-    return count;
-}
-
-int print_option(int argc, char* argv[], int long_index, FILE *print_to)
-{
-    fprintf(print_to, "%s", argv[long_index]);
-    int count = 1;
-    if ((long_index + count) == argc) {
-        return count;
-    }
-    while((argv[long_index + count][0] != '-') || (argv[long_index + count][1] != '-')) {
-        fprintf(print_to, " %s", argv[long_index + count]);
         count++;
         if ((long_index + count) == argc) {
             break;
