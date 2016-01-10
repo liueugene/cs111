@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
                         printf("%s\n", args_list[i]);
                         i++;
                     }
-                    args_list[i] = NULL;
                 }
+                args_list[i] = NULL;
                 optind = index + i;
                 call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
                 free(args_list);
@@ -156,7 +156,6 @@ int main(int argc, char *argv[])
                 break;
             default:
                 break;
-
         }
     }
     free(filesystem); 
