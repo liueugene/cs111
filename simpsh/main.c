@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
                 //find the number of args
                 int num_args = args - 5;
                 //get the args
-                char** args_list = malloc((num_args + 1) * sizeof(char*));
+                char** args_list = malloc((num_args + 2) * sizeof(char*));
                 args_list[0] = command;
                 int i = 1;
                 if (num_args != 0) {
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
                         printf("%s\n", args_list[i]);
                         i++;
                     }
-                    
+                    args_list[i] = NULL;
                 }
                 optind = index + i;
                 call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
