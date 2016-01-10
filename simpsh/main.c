@@ -5,6 +5,7 @@
 #include "fileoptions.h"
 
 int argument_amount(int argc, char* argv[], int long_index);
+int print_option(int argc, char* argv[], int long_index, FILE *print_to);
 
 int verbose_flag = 0;
 int verbose_flag2 = 0;
@@ -30,6 +31,7 @@ int main(int argc, char *argv[])
     char* arg_error = "Incorrect number of arguments.";
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
+        printf("\n\n%d\n\n", optind);
         index = optind - 1;
         switch (opt) {
             case 'r':
@@ -40,11 +42,22 @@ int main(int argc, char *argv[])
             default:
                 break;
         }
+        if (verbose_flag) {
+            if (verbose_flag2) {
+                printf(" ");
+            }
+            else {
+                verbose_flag2 = 1;
+            }
+            print_option(argc, argv, index, stdout);
+        }
         int args = argument_amount(argc, argv, index);
+        printf("args: %d", args);
         switch (opt) {
             case 'r':
                 if (args > 2) {
-                    fprintf(stderr, "%s: %s\n", argv[index], arg_error);
+                    print_option(argc, argv, index, stderr);
+                    fprintf(stderr, ": %s\n", arg_error);
                     break;
                 }
                 if (verbose_flag) {
@@ -53,13 +66,16 @@ int main(int argc, char *argv[])
                 }
                 open_flags |= O_RDONLY;
                 if (!open_file(optarg, open_flags)) {
-                    perror(argv[index + 1]);
+                    print_option(argc, argv, index, stderr);
+                    fprintf(stderr, ": ");
+                    perror(NULL);
                 }
                 open_flags = 0;
                 break;
             case 'w':
                 if (args > 2) {
-                    fprintf(stderr, "%s: %s\n", argv[index], arg_error);
+                    print_option(argc, argv, index, stderr);
+                    fprintf(stderr, ": %s\n", arg_error);
                     break;
                 }
                 if (verbose_flag) {
@@ -68,19 +84,23 @@ int main(int argc, char *argv[])
                 }
                 open_flags |= O_WRONLY;
                 if(!open_file(optarg, open_flags)) {
-                    perror(argv[index + 1]);
+                    print_option(argc, argv, index, stderr);
+                    fprintf(stderr, ": ");
+                    perror(NULL);
                 }
                 open_flags = 0;
                 break;
             case 'v':
                 if (args != 1) {
-                    fprintf(stderr, "%s: %s\n", argv[index], arg_error);
+                    print_option(argc, argv, index, stderr);
+                    fprintf(stderr, ": %s\n", arg_error);
                 }
                 verbose_flag = 1;
                 break;
             case 'c':
                 if (args < 5) {
-                    fprintf(stderr, "%s: %s\n", argv[index], arg_error);
+                    print_option(argc, argv, index, stderr);
+                    fprintf(stderr, ": %s\n", arg_error);
                     printf("\n");
                     verbose_flag2 = 0;
                     break;
@@ -130,27 +150,32 @@ int main(int argc, char *argv[])
 
 int argument_amount(int argc, char* argv[], int long_index)
 {
-    int count = 0;
-    if (verbose_flag) {
-        if (verbose_flag2) {
-            printf(" ");
-        }
-        else {
-            verbose_flag2 = 1;
-        }
-        printf("%s", argv[long_index]);
+    int count = 1;
+    if ((long_index + count) == argc) {
+        return count;
     }
-    count++;
     while((argv[long_index + count][0] != '-') || (argv[long_index + count][1] != '-')) {
-        if (verbose_flag) {
-            printf(" %s", argv[long_index + count]);
+        if ((long_index + count) == argc) {
+            break;
         }
+        count++;
+    }
+    return count;
+}
+
+int print_option(int argc, char* argv[], int long_index, FILE *print_to)
+{
+    fprintf(print_to, "%s", argv[long_index]);
+    int count = 1;
+    if ((long_index + count) == argc) {
+        return count;
+    }
+    while((argv[long_index + count][0] != '-') || (argv[long_index + count][1] != '-')) {
+        fprintf(print_to, " %s", argv[long_index + count]);
         count++;
         if ((long_index + count) == argc) {
             break;
         }
     }
-
     return count;
 }
-
