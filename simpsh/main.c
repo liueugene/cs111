@@ -73,14 +73,16 @@ int main(int argc, char *argv[])
                 open_flags = 0;
                 break;
             case 'v':
-                verbose_flag = 1;
                 if (args != 1) {
                     fprintf(stderr, "%s: %s\n", argv[index], arg_error);
                 }
+                verbose_flag = 1;
                 break;
             case 'c':
                 if (args < 5) {
                     fprintf(stderr, "%s: %s\n", argv[index], arg_error);
+                    printf("\n");
+                    verbose_flag2 = 0;
                     break;
                 }
                 if (verbose_flag) {
