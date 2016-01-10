@@ -1,13 +1,15 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "fileoptions.h"
+
+int argument_amount(int argc, char* argv[], int long_index);
 
 int verbose_flag = 0;
 int open_flags = 0;
 int no_of_files = 0;
-int max_files = 15;
+int max_files = 5;
 int* filesystem;
 int verbose_flag2 = 0;
 
@@ -27,7 +29,7 @@ int main(int argc, char *argv[])
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
         printf("%d\n", option_index);
-        int args = Argument_Amount(argc, argv, option_index);
+        int args = argument_amount(argc, argv, option_index);
         switch (opt) {
             case 'r':
                 if (args > 2) {
@@ -61,15 +63,15 @@ int main(int argc, char *argv[])
                 }
                 //get the stdin file descriptor
                 optind--;
-                int stdin_logical_fid = argv[optind];
+                int stdin_logical_fid = strtol(argv[optind], NULL, 10);
                 int stdin_real_fid = filesystem[stdin_logical_fid];
                 //get the stdout file descriptor
                 optind++;
-                int stdout_logical_fid = argv[optind];
+                int stdout_logical_fid = strtol(argv[optind], NULL, 10);
                 int stdout_real_fid = filesystem[stdout_logical_fid];
                 //get the stderr file descriptor
                 optind++;
-                int stderr_logical_fid = argv[optind];
+                int stderr_logical_fid = strtol(argv[optind], NULL, 10);
                 int stderr_real_fid = filesystem[stderr_logical_fid];
                 //get the command string
                 optind++;
@@ -98,7 +100,7 @@ int main(int argc, char *argv[])
     free(filesystem); 
 }
 
-int Argument_Amount(int argc, char* argv[], int long_index)
+int argument_amount(int argc, char* argv[], int long_index)
 {
     int count = 0;
     if (verbose_flag) {
