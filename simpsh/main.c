@@ -21,15 +21,25 @@ int main(int argc, char *argv[])
         {"rdonly", required_argument, NULL, 'r'},
         {"wronly", required_argument, NULL, 'w'},
         {"command", required_argument, NULL, 'c'},
-        {"verbose", no_argument, &verbose_flag, 1}
+        {"verbose", no_argument, NULL, 'v'}
     };
     
     int option_index = 0;
     int opt;
+    int index;
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
-        printf("%d\n", option_index);
-        int args = argument_amount(argc, argv, option_index);
+        index = optind - 1;
+        switch (opt) {
+            case 'r':
+            case 'w':
+            case 'c':
+                index--;
+                break;
+            default:
+                break;
+        }
+        int args = argument_amount(argc, argv, index);
         switch (opt) {
             case 'r':
                 if (args > 2) {
@@ -53,6 +63,9 @@ int main(int argc, char *argv[])
                 open_flags |= O_WRONLY;
                 open_file(optarg, open_flags);
                 break;
+            case 'v':
+                verbose_flag = 1;
+                break;
             case 'c':
                 if (args < 5) {
                     //error
@@ -62,35 +75,30 @@ int main(int argc, char *argv[])
                     verbose_flag2 = 0;
                 }
                 //get the stdin file descriptor
-                optind--;
-                int stdin_logical_fid = strtol(argv[optind], NULL, 10);
+                int stdin_logical_fid = strtol(argv[optind - 1], NULL, 10);
                 int stdin_real_fid = filesystem[stdin_logical_fid];
                 //get the stdout file descriptor
-                optind++;
                 int stdout_logical_fid = strtol(argv[optind], NULL, 10);
                 int stdout_real_fid = filesystem[stdout_logical_fid];
                 //get the stderr file descriptor
-                optind++;
-                int stderr_logical_fid = strtol(argv[optind], NULL, 10);
+                int stderr_logical_fid = strtol(argv[optind + 1], NULL, 10);
                 int stderr_real_fid = filesystem[stderr_logical_fid];
                 //get the command string
-                optind++;
-                char* command = argv[optind];
+                char* command = argv[optind + 2];
                 //find the number of args
                 int num_args = args - 5;
                 //get the args
-                char** args = malloc((num_args + 1) * sizeof(char*));
-                args[0] = command;
+                char** args_list = malloc((num_args + 1) * sizeof(char*));
+                args_list[0] = command;
                 if (num_args != 0) {
                     int i = 1;
                     while(i <= num_args) {
-                        args[i] = argv[optind];
-                        optind++;
+                        args_list[i] = argv[optind + 1 + i];
                         i++;
                     }
                 }
                 //call the command via execvp
-                free(args);
+                free(args_list);
                 break;
             default:
                 break;
