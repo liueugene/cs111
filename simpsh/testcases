@@ -1,0 +1,19 @@
+echo "abc" > a
+echo "123" > b
+touch c
+touch d
+touch e
+./simpsh --rdonly a --wronly c --wronly d --command 0 1 2 cat
+diff -u a c
+diff -u d e
+./simpsh --rdonly a b 2>d
+echo "--rdonly a b: Incorrect number of arguments." > f
+diff -u d f
+./simpsh --rdonly b --wronly a --wronly e --command 0 1 2 cat
+diff -u b a
+printf "bbb\nccc\naaa\nbbb" > g
+touch h
+touch j
+./simpsh --rdonly g --wronly h --wronly j --command 0 1 2 sort -u
+printf "aaa\nbbb\nccc" > k
+diff -u k 
