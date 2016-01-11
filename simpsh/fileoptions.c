@@ -34,11 +34,19 @@ int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr
     //child process
     if (pid == 0) {
         
-        dup2(stdin_fd, 0);
-        dup2(stdout_fd, 1);  
-        dup2(stderr_fd, 2);
+        if (dup2(stdin_fd, 0) < 0) {
+            return 0;
+        }
+        if (dup2(stdout_fd, 1) < 0) {
+            return 0;
+        }
+        if (dup2(stderr_fd, 2) < 0) {
+            return 0;
+        }
         
-        execvp(argv[0], argv);
+        if (execvp(argv[0], argv) < 0) {
+            return 0;
+        }
         
         exit(0);
         
@@ -46,5 +54,5 @@ int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr
         
         
     }
-    return 0;
+    return 1;
 }

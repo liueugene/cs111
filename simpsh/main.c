@@ -16,6 +16,7 @@ int* filesystem;
 
 int main(int argc, char *argv[])
 {
+    int exit_status = 0;
     filesystem = malloc(max_files * sizeof(int));
     struct option options[] =
     {
@@ -56,13 +57,17 @@ int main(int argc, char *argv[])
                     printf("\n");
                     verbose_flag2 = 0;
                 }
-                if (args > 2) {
+                if (args != 2) {
                     print_error(argc, argv, index, arg_error);
+                    if (args == 1) {
+                        optind--;
+                    }
                     break;
                 }
                 open_flags |= O_RDONLY;
                 if (!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
+                    exit_status = 1;
                 }
                 open_flags = 0;
                 break;
@@ -71,13 +76,17 @@ int main(int argc, char *argv[])
                     printf("\n");
                     verbose_flag2 = 0;
                 }
-                if (args > 2) {
+                if (args != 2) {
                     print_error(argc, argv, index, arg_error);
+                    if (args == 1) {
+                        optind--;
+                    }
                     break;
                 }
                 open_flags |= O_WRONLY;
                 if(!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
+                    exit_status = 1;
                 }
                 open_flags = 0;
                 break;
@@ -95,11 +104,19 @@ int main(int argc, char *argv[])
                 }
                 if (args < 5) {
                     print_error(argc, argv, index, arg_error);
+                    if (args == 1) {
+                        optind--;
+                    }
                     break;
                 }
                 //get the stdin file descriptor
                 index++;
-                int stdin_logical_fd = strtol(argv[index], NULL, 10);
+                char *end;
+                int stdin_logical_fd = strtol(argv[index], &end, 10);
+                if (end == argv[index]) {
+                    print_error(argc, argv, index - 1, "Invalid file descriptor input for stdin.");
+                    break;
+                }
                 if ((stdin_logical_fd >= no_of_files) || (stdin_logical_fd < 0)) {
                     print_error(argc, argv, index - 1, "Invalid file descriptor number for stdin.");
                     break;
@@ -107,7 +124,11 @@ int main(int argc, char *argv[])
                 int stdin_real_fd = filesystem[stdin_logical_fd];
                 //get the stdout file descriptor
                 index++;
-                int stdout_logical_fd = strtol(argv[index], NULL, 10);
+                int stdout_logical_fd = strtol(argv[index], &end, 10);
+                if (end == argv[index]) {
+                    print_error(argc, argv, index - 2, "Invalid file descriptor input for stdout.");
+                    break;
+                }
                 if ((stdout_logical_fd >= no_of_files) || (stdout_logical_fd < 0)) {
                     print_error(argc, argv, index - 2, "Invalid file descriptor number for stdout.");
                     break;
@@ -115,7 +136,11 @@ int main(int argc, char *argv[])
                 int stdout_real_fd = filesystem[stdout_logical_fd];
                 //get the stderr file descriptor
                 index++;
-                int stderr_logical_fd = strtol(argv[index], NULL, 10);
+                int stderr_logical_fd = strtol(argv[index], &end, 10);
+                if (end == argv[index]) {
+                    print_error(argc, argv, index - 3, "Invalid file descriptor input for stderr.");
+                    break;
+                }
                 if ((stderr_logical_fd >= no_of_files) || (stderr_logical_fd < 0)) {
                     print_error(argc, argv, index - 3, "Invalid file descriptor number for stderr.");
                     break;
@@ -138,7 +163,9 @@ int main(int argc, char *argv[])
                 }
                 args_list[i] = NULL;
                 optind = index + i;
-                call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
+                if (!call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd)) {
+                    print_error(argc, argv, index - 4, NULL);
+                }
                 free(args_list);
                 open_flags = 0;  //??????????????????????????
                 break;
@@ -146,7 +173,8 @@ int main(int argc, char *argv[])
                 break;
         }
     }
-    free(filesystem); 
+    free(filesystem);
+    return exit_status;
 }
 
 int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_to)
@@ -181,7 +209,6 @@ void print_error(int argc, char* argv[], int long_index, char* error)
         fprintf(stderr, ": %s\n", error);
     }
 } 
-
 
 
 
