@@ -94,7 +94,11 @@ int main(int argc, char *argv[])
             case 'v':
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
-                    break;
+                }
+                if (verbose_flag) {
+                    printf("\n");
+                    verbose_flag2 = 0;
+                    print_error(argc, argv, index, "--verbose has already been called.");
                 }
                 verbose_flag = 1;
                 break;

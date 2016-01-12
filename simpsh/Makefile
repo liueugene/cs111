@@ -1,10 +1,7 @@
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Wno-unused
 LAB = 1
-DISTDIR = lab1-$(USER)
-
-TESTS = $(wildcard test.sh)
-TEST_BASES = $(subst .sh,,$(TESTS))
+DISTDIR = lab1-EugeneLiu_CameronIto
 
 SIMPSH_SOURCES = fileoptions.c main.c
 SIMPSH_OBJECTS = $(subst .c,.o,$(SIMPSH_SOURCES))
@@ -20,20 +17,12 @@ fileoptions.o: fileoptions.h
 
 dist: $(DISTDIR).tar.gz
 
-$(DISTDIR).tar.gz: $(DIST_SOURCES) check-dist
-	rm -fr $(DISTDIR)
-	tar -czf $@.tmp --transform='s,^,$(DISTDIR)/,' $(DIST_SOURCES)
-	./check-dist $(DISTDIR)
-	mv $@.tmp $@
-	
+$(DISTDIR).tar.gz: $(DIST_SOURCES)
+	rm -rf $(DISTDIR)
+	tar -czf $@ --transform='s/^/$(DISTDIR)//' $(DIST_SOURCES)	
 
 clean:
-	rm -fr *.o *~ *.bak *.tar.gz core *.core *.tmp $(DISTDIR)
+	rm -rf *.o *.tar.gz *.tmp $(DISTDIR)
 	
-check: $(TEST_BASES)
-
-$(TEST_BASES): simpsh
-	./$@.sh
-	
-
-.PHONY: default dist clean
+check: simpsh
+	./test.sh
