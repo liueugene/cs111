@@ -3,7 +3,7 @@ CFLAGS = -g -Wall -Wextra -Wno-unused
 LAB = 1
 DISTDIR = lab1-$(USER)
 
-TESTS = $(wildcard test*.sh)
+TESTS = $(wildcard test.sh)
 TEST_BASES = $(subst .sh,,$(TESTS))
 
 SIMPSH_SOURCES = fileoptions.c main.c

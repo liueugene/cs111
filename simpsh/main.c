@@ -6,6 +6,7 @@
 
 int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_to);
 void print_error(int argc, char* argv[], int long_index, char* error);
+int max(int a, int b);
 
 int verbose_flag = 0;
 int verbose_flag2 = 0;
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
                 open_flags |= O_RDONLY;
                 if (!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
-                    exit_status = 1;
+                    exit_status = max(1, exit_status);
                 }
                 open_flags = 0;
                 break;
@@ -86,7 +87,7 @@ int main(int argc, char *argv[])
                 open_flags |= O_WRONLY;
                 if(!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
-                    exit_status = 1;
+                    exit_status = max(1, exit_status);
                 }
                 open_flags = 0;
                 break;
@@ -210,8 +211,13 @@ void print_error(int argc, char* argv[], int long_index, char* error)
     }
 } 
 
-
-
+int max(int a, int b)
+{
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
 
 
 
