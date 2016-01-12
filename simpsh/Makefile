@@ -3,6 +3,9 @@ CFLAGS = -g -Wall -Wextra -Wno-unused
 LAB = 1
 DISTDIR = lab1-$(USER)
 
+TESTS = $(wildcard test*.sh)
+TEST_BASES = $(subst .sh,,$(TESTS))
+
 SIMPSH_SOURCES = fileoptions.c main.c
 SIMPSH_OBJECTS = $(subst .c,.o,$(SIMPSH_SOURCES))
 
@@ -26,5 +29,11 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES) check-dist
 
 clean:
 	rm -fr *.o *~ *.bak *.tar.gz core *.core *.tmp $(DISTDIR)
+	
+check: $(TEST_BASES)
+
+$(TEST_BASES): simpsh
+	./$@.sh
+	
 
 .PHONY: default dist clean
