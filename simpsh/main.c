@@ -210,6 +210,7 @@ int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_
             break;
         }
     }
+    fflush(print_to);
     return count;
 }
 
@@ -223,7 +224,7 @@ void print_error(int argc, char* argv[], int long_index, char* error)
     else {
         fprintf(stderr, ": %s\n", error);
     }
-} 
+}
 
 int max(int a, int b)
 {

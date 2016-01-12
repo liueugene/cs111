@@ -47,8 +47,6 @@ void call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stder
             exit(1);
         }
         
-        exit(0);
-        
     } else { //parent process
         
         

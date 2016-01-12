@@ -1,0 +1,17 @@
+#!/bin/bash
+
+tar -xf "$1.tar.gz" || exit 1
+cd $1
+
+beforeclean=$(ls -al)
+make clean
+afterclean=$(ls -al)
+
+if [ "$beforeclean" != "$afterclean" ]
+then
+    echo "Unnecessary files included in tar"
+    exit 1
+fi
+
+make check || exit 1
+make clean

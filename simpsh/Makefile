@@ -6,7 +6,7 @@ DISTDIR = lab1-EugeneLiu_CameronIto
 SIMPSH_SOURCES = fileoptions.c main.c
 SIMPSH_OBJECTS = $(subst .c,.o,$(SIMPSH_SOURCES))
 
-DIST_SOURCES = $(SIMPSH_SOURCES) fileoptions.h Makefile test.sh README
+DIST_SOURCES = $(SIMPSH_SOURCES) fileoptions.h Makefile test.sh README test-dist
 
 default: simpsh
 
@@ -15,7 +15,8 @@ simpsh: $(SIMPSH_OBJECTS)
 
 fileoptions.o: fileoptions.h
 
-dist: $(DISTDIR).tar.gz
+dist: $(DISTDIR).tar.gz test-dist
+	./test-dist $(DISTDIR)
 
 $(DISTDIR).tar.gz: $(DIST_SOURCES)
 	rm -rf $(DISTDIR)
