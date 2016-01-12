@@ -13,11 +13,11 @@ int verbose_flag2 = 0;
 int open_flags = 0;
 int no_of_files = 0;
 int max_files = 5;
+int exit_status = 0;
 int* filesystem;
 
 int main(int argc, char *argv[])
 {
-    int exit_status = 0;
     filesystem = malloc(max_files * sizeof(int));
     
     if (filesystem == NULL) {
