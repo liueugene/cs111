@@ -24,6 +24,7 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES) check-dist
 	mv $@.tmp $@
 	
 
-clean: rm -fr *.o *~ *.bak *.tar.gz core *.core *.tmp timetrash $(DISTDIR)
+clean:
+	rm -fr *.o *~ *.bak *.tar.gz core *.core *.tmp $(DISTDIR)
 
 .PHONY: default dist clean
