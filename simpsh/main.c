@@ -24,6 +24,11 @@ int main(int argc, char *argv[])
         perror("malloc");
         exit(1);
     }
+
+    int temp = cycle_option(argc, argv, 0, 0, NULL);
+    if (temp != 1) {
+        print_error(argc, argv, 0, "Invalid arguments.");
+    }
     
     struct option options[] =
     {
