@@ -8,7 +8,7 @@ int open_file(char *filename, int flags)
             int* temp_filesystem = realloc(filesystem, max_files * sizeof(int));
             if (temp_filesystem == NULL) {
                     fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
-                    exit(1);
+                    exit(max(exit_status, 1));
             }
             filesystem = temp_filesystem;
     }
@@ -27,7 +27,7 @@ int open_file(char *filename, int flags)
     return 1;
 }
 
-int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr_fd)
+void call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr_fd)
 {
     pid_t pid = fork();
     
@@ -35,17 +35,16 @@ int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr
     if (pid == 0) {
         
         if (dup2(stdin_fd, 0) < 0) {
-            return 0;
+            exit(1);
         }
         if (dup2(stdout_fd, 1) < 0) {
-            return 0;
+            exit(1);
         }
         if (dup2(stderr_fd, 2) < 0) {
-            return 0;
+            exit(1);
         }
-        
         if (execvp(argv[0], argv) < 0) {
-            return 0;
+            exit(1);
         }
         
         exit(0);
@@ -54,5 +53,4 @@ int call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr
         
         
     }
-    return 1;
 }

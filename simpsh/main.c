@@ -19,6 +19,12 @@ int main(int argc, char *argv[])
 {
     int exit_status = 0;
     filesystem = malloc(max_files * sizeof(int));
+    
+    if (filesystem == NULL) {
+        perror("malloc");
+        exit(1);
+    }
+    
     struct option options[] =
     {
         {"rdonly", required_argument, NULL, 'r'},
@@ -158,6 +164,12 @@ int main(int argc, char *argv[])
                 int num_args = args - 5;
                 //get the args
                 char** args_list = malloc((num_args + 2) * sizeof(char*));
+                
+                if (args_list == NULL) {
+                    perror("malloc");
+                    exit(max(exit_status, 1));
+                }
+                
                 args_list[0] = command;
                 int i = 1;
                 if (num_args != 0) {
@@ -168,9 +180,7 @@ int main(int argc, char *argv[])
                 }
                 args_list[i] = NULL;
                 optind = index + i;
-                if (!call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd)) {
-                    print_error(argc, argv, index - 4, NULL);
-                }
+                call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
                 free(args_list);
                 open_flags = 0;  //??????????????????????????
                 break;
