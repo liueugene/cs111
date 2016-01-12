@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
     
     struct option options[] =
     {
-        {"rdonly", required_argument, NULL, 'r'},
-        {"wronly", required_argument, NULL, 'w'},
+        {"rdonly", required_argument, NULL, O_RDONLY},
+        {"wronly", required_argument, NULL, O_WRONLY},
         {"command", required_argument, NULL, 'c'},
         {"verbose", no_argument, NULL, 'v'}
     };
@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
         index = optind - 1;
         switch (opt) {
-            case 'r':
-            case 'w':
+            case O_RDONLY:
+            case O_WRONLY:
             case 'c':
                 index--;
                 break;
@@ -64,7 +64,14 @@ int main(int argc, char *argv[])
         }
         int args = cycle_option(argc, argv, index, verbose_flag, stdout);
         switch (opt) {
-            case 'r':
+            /*case O_flag:
+                if (args != 1) {
+                    print_error(argc, argv, index, arg_error);
+                }
+                open_flags |= opt;
+                break; */
+            case O_RDONLY:
+            case O_WRONLY:
                 if (verbose_flag) {
                     printf("\n");
                     verbose_flag2 = 0;
@@ -76,26 +83,7 @@ int main(int argc, char *argv[])
                     }
                     break;
                 }
-                open_flags |= O_RDONLY;
-                if (!open_file(optarg, open_flags)) {
-                    print_error(argc, argv, index, NULL);
-                    exit_status = max(1, exit_status);
-                }
-                open_flags = 0;
-                break;
-            case 'w':
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                }
-                if (args != 2) {
-                    print_error(argc, argv, index, arg_error);
-                    if (args == 1) {
-                        optind--;
-                    }
-                    break;
-                }
-                open_flags |= O_WRONLY;
+                open_flags |= opt;
                 if(!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
                     exit_status = max(1, exit_status);
@@ -103,13 +91,13 @@ int main(int argc, char *argv[])
                 open_flags = 0;
                 break;
             case 'v':
-                if (args != 1) {
-                    print_error(argc, argv, index, arg_error);
-                }
                 if (verbose_flag) {
                     printf("\n");
                     verbose_flag2 = 0;
                     print_error(argc, argv, index, "--verbose has already been called.");
+                }
+                if (args != 1) {
+                    print_error(argc, argv, index, arg_error);
                 }
                 verbose_flag = 1;
                 break;
