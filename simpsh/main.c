@@ -19,7 +19,7 @@ int max_ignores = 5;
 int* ignore_list;
 int exit_status = 0;
 
-const int oflags[] = {   
+const int OFLAGS[] = {   
     O_APPEND,       //0
     O_CLOEXEC,      //1
     O_CREAT,        //2
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
                 }
-                open_flags |= oflags[opt];
+                open_flags |= OFLAGS[opt];
                 break;
             case RDWR:
             case RDONLY:
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
                     open_flags = 0;
                     break;
                 }
-                open_flags |= oflags[opt];
+                open_flags |= OFLAGS[opt];
                 if(!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
                     exit_status = max(1, exit_status);
