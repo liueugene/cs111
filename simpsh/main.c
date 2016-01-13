@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     {
         {"rdonly", required_argument, NULL, O_RDONLY},
         {"wronly", required_argument, NULL, O_WRONLY},
-        {"rdwr", required_argument, NULL, 'b'},
+        {"rdwr", required_argument, NULL, O_RDWR},
         {"command", required_argument, NULL, 'c'},
         {"verbose", no_argument, NULL, 'v'},
         {"ignore", required_argument, NULL, 'i'},
@@ -65,7 +65,6 @@ int main(int argc, char *argv[])
     };
     
     int option_index = 0;
-    int option_no = 0;
     int opt;
     int index;
     char* arg_error = "Incorrect number of arguments.";
@@ -73,6 +72,7 @@ int main(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
         index = optind - 1;
         switch (opt) {
+            case O_RDWR:
             case O_RDONLY:
             case O_WRONLY:
             case 'c':
@@ -81,11 +81,6 @@ int main(int argc, char *argv[])
                 break;
             default:
                 break;
-        }
-        if (should_ignore(option_no)) {
-            option_no++;
-            optind = index + 1;
-            continue;
         }
         if (verbose_flag) {
             if (verbose_flag2) {
@@ -113,8 +108,7 @@ int main(int argc, char *argv[])
                 }
                 open_flags |= opt;
                 break;
-            case 'b':
-                opt = O_RDONLY | O_WRONLY;
+            case O_RDWR:
             case O_RDONLY:
             case O_WRONLY:
                 if (verbose_flag) {
@@ -244,17 +238,12 @@ int main(int argc, char *argv[])
                     print_error(argc, argv, index, "Argument is not an integer.");
                     break;
                 }
-                if (ignore_n <= option_no) {
-                    print_error(argc, argv, index, "Invalid integer.");
-                    break;
-                }
                 add_ignore(ignore_n);
                 open_flags = 0;
                 break;
             default:
                 break;
         }
-        option_no++;
     },
     free(filesystem);
     free(ignore_list);
