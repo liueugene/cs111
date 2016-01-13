@@ -5,6 +5,7 @@ Only implemented up to Lab 1a spec (--rdonly, --wronly, --command, --verbose)
 http://web.cs.ucla.edu/classes/winter16/cs111/assign/lab1.html
 
 
-File to open with --rdonly or --wronly must already exist
-Must open at least one file via --rdonly or --wronly before running --command
-Giving --rdonly or --wronly too many arguments will not open any file
+* File to open with --rdonly or --wronly must already exist
+* Must open at least one file via --rdonly or --wronly before running --command
+* Giving --rdonly or --wronly too many arguments will not open any file
+* --wait is not implemented - After command is run in the child process, the parent process does not wait for the child to finish

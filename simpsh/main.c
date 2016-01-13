@@ -18,8 +18,8 @@ int no_of_ignores = 0;
 int max_ignores = 5;
 int* ignore_list;
 int exit_status = 0;
-int* flags = 
-{   
+
+const int oflags[] = {   
     O_APPEND,       //0
     O_CLOEXEC,      //1
     O_CREAT,        //2
@@ -35,21 +35,6 @@ int* flags =
     O_RDONLY,       //12
     O_WRONLY        //13
 };
-
-int APPEND = 0;
-int CLOEXEC = 1;
-int CREAT = 2;
-int DIRECTORY = 3;
-int DSYNC = 4;
-int EXCL = 5;
-int NOFOLLOW = 6;
-int NONBLOCK = 7;
-int RSYNC = 8;
-int SYNC = 9;
-int TRUNC = 10;
-int RDWR = 11;
-int RDONLY = 12;
-int WRONLY = 13;
 
 int main(int argc, char *argv[])
 {
@@ -100,6 +85,7 @@ int main(int argc, char *argv[])
     int opt;
     int index;
     char* arg_error = "Incorrect number of arguments.";
+    char *end;
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
         index = optind - 1;
@@ -138,7 +124,7 @@ int main(int argc, char *argv[])
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
                 }
-                open_flags |= flags[opt];
+                open_flags |= oflags[opt];
                 break;
             case RDWR:
             case RDONLY:
@@ -155,7 +141,7 @@ int main(int argc, char *argv[])
                     open_flags = 0;
                     break;
                 }
-                open_flags |= flags[opt];
+                open_flags |= oflags[opt];
                 if(!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
                     exit_status = max(1, exit_status);
@@ -189,7 +175,6 @@ int main(int argc, char *argv[])
                 }
                 //get the stdin file descriptor
                 index++;
-                char *end;
                 int stdin_logical_fd = strtol(argv[index], &end, 10);
                 if (end == argv[index]) {
                     print_error(argc, argv, index - 1, "Invalid file descriptor input for stdin.");
@@ -264,7 +249,6 @@ int main(int argc, char *argv[])
                     open_flags = 0;
                     break;
                 }
-                char* end;
                 int ignore_n = strtol(argv[index+1], &end, 10);
                 if (end == argv[index]) {
                     print_error(argc, argv, index, "Argument is not an integer.");
@@ -276,7 +260,7 @@ int main(int argc, char *argv[])
             default:
                 break;
         }
-    },
+    }
     free(filesystem);
     free(ignore_list);
     return exit_status;

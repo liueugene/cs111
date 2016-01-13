@@ -1,6 +1,21 @@
 #ifndef FILEOPTIONS_H
 #define FILEOPTIONS_H
 
+#define APPEND 0
+#define CLOEXEC 1
+#define CREAT 2
+#define DIRECTORY 3
+#define DSYNC 4
+#define EXCL 5
+#define NOFOLLOW 6
+#define NONBLOCK 7
+#define RSYNC 8
+#define SYNC 9
+#define TRUNC 10
+#define RDWR 11
+#define RDONLY 12
+#define WRONLY 13
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
