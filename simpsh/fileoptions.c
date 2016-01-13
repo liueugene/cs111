@@ -4,13 +4,13 @@ int open_file(char *filename, int flags)
 {
     //adding a file:
     if (no_of_files == max_files) {
-            max_files = max_files * 2;
-            int* temp_filesystem = realloc(filesystem, max_files * sizeof(int));
-            if (temp_filesystem == NULL) {
-                    fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
-                    exit(max(exit_status, 1));
-            }
-            filesystem = temp_filesystem;
+        max_files = max_files * 2;
+        int* temp_filesystem = realloc(filesystem, max_files * sizeof(int));
+        if (temp_filesystem == NULL) {
+            fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
+            exit(max(exit_status, 1));
+        }
+        filesystem = temp_filesystem;
     }
     int temp_fd_holder = open(filename, flags);
     if (temp_fd_holder == -1) {
@@ -52,3 +52,32 @@ void call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stder
         
     }
 }
+
+void add_ignore(int n)
+{
+    if (no_of_ignores == max_ignores) {
+        max_ignores = max_ignores * 2;
+        int* temp_ignore_list = realloc(ignore_list, max_files * sizeof(int));
+        if (temp_ignore_list == NULL) {
+                fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
+                exit(max(exit_status, 1));
+        }
+        ignore_list = temp_ignore_list;
+    }
+    ignore_list[no_of_ignores] = n;
+    no_of_ignores++;
+}
+
+int should_ignore(int n)
+{
+    for (int i = 0; i < no_of_ignores; i++) {
+        if (ignore_list[i] == n) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+
+
