@@ -318,6 +318,7 @@ int main(int argc, char *argv[])
                     pause();
                 }
                 else {
+                    signal(11, SIG_DFL);
                     raise(SIGSEGV);
                 }
                 break;
