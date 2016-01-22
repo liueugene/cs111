@@ -19,23 +19,6 @@ int max_ignores = 5;
 int* ignore_list;
 int exit_status = 0;
 
-const int OFLAGS[] = {   
-    O_APPEND,       //0
-    O_CLOEXEC,      //1
-    O_CREAT,        //2
-    O_DIRECTORY,    //3
-    O_DSYNC,        //4
-    O_EXCL,         //5
-    O_NOFOLLOW,     //6
-    O_NONBLOCK,     //7
-    O_RSYNC,        //8
-    O_SYNC,         //9
-    O_TRUNC,        //10
-    O_RDWR,         //11
-    O_RDONLY,       //12
-    O_WRONLY        //13
-};
-
 int main(int argc, char *argv[])
 {
     filesystem = malloc(max_files * sizeof(int));
@@ -59,25 +42,25 @@ int main(int argc, char *argv[])
     
     struct option options[] =
     {
-        {"rdwr", required_argument, NULL, RDWR},
-        {"rdonly", required_argument, NULL, RDONLY},
-        {"wronly", required_argument, NULL, WRONLY},
+        {"rdwr", required_argument, NULL, O_RDWR},
+        {"rdonly", required_argument, NULL, O_RDONLY},
+        {"wronly", required_argument, NULL, O_WRONLY},
         {"command", required_argument, NULL, 'c'},
         {"verbose", no_argument, NULL, 'v'},
         {"ignore", required_argument, NULL, 'i'},
 
         //flags
-        {"append", no_argument, NULL, APPEND},
-        {"cloexec", no_argument, NULL, CLOEXEC},
-        {"creat", no_argument, NULL, CREAT},
-        {"directory", no_argument, NULL, DIRECTORY},
-        {"dsync", no_argument, NULL, DSYNC},
-        {"excl", no_argument, NULL, EXCL},
-        {"nofollow", no_argument, NULL, NOFOLLOW},
-        {"nonblock", no_argument, NULL, NONBLOCK},
-        {"rsync", no_argument, NULL, RSYNC},
-        {"sync", no_argument, NULL, SYNC},
-        {"trunc", no_argument, NULL, TRUNC}
+        {"append", no_argument, NULL, O_APPEND},
+        {"cloexec", no_argument, NULL, O_CLOEXEC},
+        {"creat", no_argument, NULL, O_CREAT},
+        {"directory", no_argument, NULL, O_DIRECTORY},
+        {"dsync", no_argument, NULL, O_DSYNC},
+        {"excl", no_argument, NULL, O_EXCL},
+        {"nofollow", no_argument, NULL, O_NOFOLLOW},
+        {"nonblock", no_argument, NULL, O_NONBLOCK},
+        {"rsync", no_argument, NULL, O_RSYNC},
+        {"sync", no_argument, NULL, O_SYNC},
+        {"trunc", no_argument, NULL, O_TRUNC}
 
     };
     
@@ -110,25 +93,27 @@ int main(int argc, char *argv[])
         }
         int args = cycle_option(argc, argv, index, verbose_flag, stdout);
         switch (opt) {
-            case APPEND: //Append
-            case CLOEXEC:
-            case CREAT:
-            case DIRECTORY:
-            case DSYNC:
-            case EXCL:
-            case NOFOLLOW:
-            case NONBLOCK:
-            case RSYNC:
-            case SYNC:
-            case TRUNC:
+            case O_APPEND: //Append
+            case O_CLOEXEC:
+            case O_CREAT:
+            case O_DIRECTORY:
+            case O_DSYNC:
+            case O_EXCL:
+            case O_NOFOLLOW:
+            case O_NONBLOCK:
+            case O_RSYNC:
+#if O_RSYNC != O_SYNC
+            case O_SYNC:
+#endif
+            case O_TRUNC:
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
                 }
-                open_flags |= OFLAGS[opt];
+                open_flags |= opt;
                 break;
-            case RDWR:
-            case RDONLY:
-            case WRONLY:
+            case O_RDWR:
+            case O_RDONLY:
+            case O_WRONLY:
                 if (verbose_flag) {
                     printf("\n");
                     verbose_flag2 = 0;
@@ -141,7 +126,7 @@ int main(int argc, char *argv[])
                     open_flags = 0;
                     break;
                 }
-                open_flags |= OFLAGS[opt];
+                open_flags |= opt;
                 if(!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
                     exit_status = max(1, exit_status);
