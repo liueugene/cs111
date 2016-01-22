@@ -33,19 +33,6 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
     
     //child process
     if (pid == 0) {
-
-        for (int i = 0; i <= sig_max; i++) {
-            switch(signals[i]) {
-                case 0:
-                    signal(i, SIG_DFL);
-                    break;
-                case 1:
-                    signal(i, SIG_IGN);
-                    break;
-                case 2:
-                    signal(i, handler);
-            }
-        }
         
         if (dup2(stdin_fd, 0) < 0) {
             exit(1);
