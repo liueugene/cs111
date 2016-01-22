@@ -12,7 +12,7 @@ int open_file(char *filename, int flags)
         }
         filesystem = temp_filesystem;
     }
-    int temp_fd_holder = open(filename, flags);
+    int temp_fd_holder = open(filename, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (temp_fd_holder == -1) {
         return 0;
     }
@@ -27,7 +27,7 @@ int open_file(char *filename, int flags)
     return 1;
 }
 
-void call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stderr_fd)
+void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd, int stderr_fd)
 {
     pid_t pid = fork();
     
@@ -48,8 +48,20 @@ void call_command(int argc, char* argv[], int stdin_fd, int stdout_fd, int stder
         }
         
     } else { //parent process
-        
-        
+        if (no_of_processes == max_processes) {
+            max_processes = max_processes * 2;
+            int* temp_processes = realloc(processes, max_processes * sizeof(int));
+            int* temp_cmds = realloc(commands, max_processes * sizeof(int));
+            if (temp_processes == NULL || temp_cmds == NULL) {
+                fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
+                exit(max(exit_status, 1));
+            }
+            processes = temp_processes;
+            commands = temp_cmds;
+        }
+        processes[no_of_processes] = pid;
+        commands[no_of_processes] = index;
+        no_of_processes++;
     }
 }
 
@@ -77,7 +89,3 @@ int should_ignore(int n)
     }
     return 0;
 }
-
-
-
-

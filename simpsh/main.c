@@ -2,11 +2,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "fileoptions.h"
 
 int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_to);
 void print_error(int argc, char* argv[], int long_index, char* error);
 int max(int a, int b);
+void handler(int n);
 
 int verbose_flag = 0;
 int verbose_flag2 = 0;
@@ -18,15 +22,39 @@ int no_of_ignores = 0;
 int max_ignores = 5;
 int* ignore_list;
 int exit_status = 0;
+int sig_min = 0;
+int sig_max = 63;
+int* processes;
+int* commands;
+int no_of_processes = 0;
+int max_processes = 5;
+
+
+#define _command 100
+#define _verbose 101
+#define _abort 102
+#define _default 103
+#define _ignore 104
+#define _catch 105
+#define _pause 106
+#define _close 107
+#define _wait 108
+
+#ifndef O_RSYNC
+#define O_RSYNC O_SYNC
+#endif
 
 int main(int argc, char *argv[])
 {
     filesystem = malloc(max_files * sizeof(int));
-    
-    if (filesystem == NULL) { 
+    processes = malloc(max_processes * sizeof(int));
+    commands = malloc(max_processes * sizeof(int));
+
+    if (filesystem == NULL || processes == NULL || commands == NULL) { 
         perror("malloc");
         exit(1);
     }
+
 
     ignore_list = malloc(max_ignores * sizeof(int));
 
@@ -42,21 +70,23 @@ int main(int argc, char *argv[])
     
     struct option options[] =
     {
-        {"rdwr", required_argument, NULL, RDWR},
-        {"rdonly", required_argument, NULL, RDONLY},
-        {"wronly", required_argument, NULL, WRONLY},
-        {"command", required_argument, NULL, 'c'},
-        {"verbose", no_argument, NULL, 'v'},
-        {"abort", no_argument, NULL, 'a'},
-        {"default", required_argument, NULL, SIG_DFL},
-        {"ignore", required_argument, NULL, SIG_IGN},
-        {"catch", required_argument, NULL, handler},
-        {"pause", no_argument, NULL, 'p'},
+        {"rdwr", required_argument, NULL, O_RDWR},
+        {"rdonly", required_argument, NULL, O_RDONLY},
+        {"wronly", required_argument, NULL, O_WRONLY},
+        {"command", required_argument, NULL, _command},
+        {"verbose", no_argument, NULL, _verbose},
+        {"abort", no_argument, NULL, _abort},
+        {"default", required_argument, NULL, _default},
+        {"ignore", required_argument, NULL, _ignore},
+        {"catch", required_argument, NULL, _catch},
+        {"pause", no_argument, NULL, _pause},
+        {"close", required_argument, NULL, _close},
+        {"wait", no_argument, NULL, _wait},
 
         //flags
         {"append", no_argument, NULL, O_APPEND},
         {"cloexec", no_argument, NULL, O_CLOEXEC},
-        {"creat", no_argument, NULL, O_CREAT},
+       {"creat", no_argument, NULL, O_CREAT},
         {"directory", no_argument, NULL, O_DIRECTORY},
         {"dsync", no_argument, NULL, O_DSYNC},
         {"excl", no_argument, NULL, O_EXCL},
@@ -70,6 +100,7 @@ int main(int argc, char *argv[])
     
     int option_index = 0;
     int opt;
+    int i;
     int index;
     char* arg_error = "Incorrect number of arguments.";
     char *end;
@@ -80,13 +111,17 @@ int main(int argc, char *argv[])
             case O_RDWR:
             case O_RDONLY:
             case O_WRONLY:
-            case 'c':
-            case 'i':
+            case _command:
+            case _default:
+            case _ignore:
+            case _catch:
+            case _close:
                 index--;
                 break;
             default:
                 break;
         }
+
         if (verbose_flag) {
             if (verbose_flag2) {
                 printf(" ");
@@ -95,7 +130,9 @@ int main(int argc, char *argv[])
                 verbose_flag2 = 1;
             }
         }
+
         int args = cycle_option(argc, argv, index, verbose_flag, stdout);
+
         switch (opt) {
             case O_APPEND:
             case O_CLOEXEC:
@@ -106,23 +143,23 @@ int main(int argc, char *argv[])
             case O_NOFOLLOW:
             case O_NONBLOCK:
             case O_RSYNC:
-    #if O_RSYNC != O_SYNC
+#if O_RSYNC != O_SYNC
             case O_SYNC:
-    #endif
+#endif
             case O_TRUNC:
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
                 }
-                open_flags |= OFLAGS[opt];
+                open_flags |= opt;
                 break;
-            case RDWR:
-            case RDONLY:
-            case WRONLY:
+            case O_RDWR:
+            case O_RDONLY:
+            case O_WRONLY:
                 if (verbose_flag) {
                     printf("\n");
                     verbose_flag2 = 0;
                 }
-                open_flags |= OFLAGS[opt];
+                open_flags |= opt;
                 if (args != 2) {
                     print_error(argc, argv, index, arg_error);
                     if (args == 1) {
@@ -135,19 +172,8 @@ int main(int argc, char *argv[])
                 }
                 open_flags = 0;
                 break;
-            case 'v':
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                    print_error(argc, argv, index, "--verbose has already been called.");
-                }
-                if (args != 1) {
-                    print_error(argc, argv, index, arg_error);
-                }
+            case _command:
                 open_flags = 0;
-                verbose_flag = 1;
-                break;
-            case 'c':
                 if (verbose_flag) {
                     printf("\n");
                     verbose_flag2 = 0;
@@ -157,7 +183,6 @@ int main(int argc, char *argv[])
                     if (args == 1) {
                         optind--;
                     }
-                    open_flags = 0;
                     break;
                 }
                 //get the stdin file descriptor
@@ -169,6 +194,10 @@ int main(int argc, char *argv[])
                 }
                 if ((stdin_logical_fd >= no_of_files) || (stdin_logical_fd < 0)) {
                     print_error(argc, argv, index - 1, "Invalid file descriptor number for stdin.");
+                    break;
+                }
+                if (filesystem[stdin_logical_fd] == -1) {
+                    print_error(argc, argv, index - 1, "stdin file number has been closed.");
                     break;
                 }
                 int stdin_real_fd = filesystem[stdin_logical_fd];
@@ -183,6 +212,10 @@ int main(int argc, char *argv[])
                     print_error(argc, argv, index - 2, "Invalid file descriptor number for stdout.");
                     break;
                 }
+                if (filesystem[stdout_logical_fd] == -1) {
+                    print_error(argc, argv, index - 2, "stdout file number has been closed.");
+                    break;
+                }
                 int stdout_real_fd = filesystem[stdout_logical_fd];
                 //get the stderr file descriptor
                 index++;
@@ -193,6 +226,10 @@ int main(int argc, char *argv[])
                 }
                 if ((stderr_logical_fd >= no_of_files) || (stderr_logical_fd < 0)) {
                     print_error(argc, argv, index - 3, "Invalid file descriptor number for stderr.");
+                    break;
+                }
+                if (filesystem[stderr_logical_fd] == -1) {
+                    print_error(argc, argv, index - 3, "stderr file number has been closed.");
                     break;
                 }
                 int stderr_real_fd = filesystem[stderr_logical_fd];
@@ -210,7 +247,7 @@ int main(int argc, char *argv[])
                 }
                 
                 args_list[0] = command;
-                int i = 1;
+                i = 1;
                 if (num_args != 0) {
                     while(i <= num_args) {
                         args_list[i] = argv[index + i];
@@ -219,13 +256,25 @@ int main(int argc, char *argv[])
                 }
                 args_list[i] = NULL;
                 optind = index + i;
-                call_command(num_args + 1, args_list, stdin_real_fd, stdout_real_fd, stderr_real_fd);
+                call_command(num_args + 1, args_list, index, stdin_real_fd, stdout_real_fd, stderr_real_fd);
                 free(args_list);
-                open_flags = 0;  //??????????????????????????
                 break;
-            case SIG_DFL:
-            case SIG_IGN:
-            case handler:
+            case _verbose:
+                if (verbose_flag) {
+                    printf("\n");
+                    verbose_flag2 = 0;
+                    print_error(argc, argv, index, "--verbose has already been called.");
+                }
+                if (args != 1) {
+                    print_error(argc, argv, index, arg_error);
+                }
+                open_flags = 0;
+                verbose_flag = 1;
+                break;
+            case _default:
+            case _ignore:
+            case _catch:
+                open_flags = 0;
                 if (verbose_flag) {
                     printf("\n");
                     verbose_flag2 = 0;
@@ -235,40 +284,87 @@ int main(int argc, char *argv[])
                     if (args == 1) {
                         optind--;
                     }
-                    open_flags = 0;
                     break;
                 }
                 int n = strtol(argv[index+1], &end, 10);
                 if (end == argv[index]) {
                     print_error(argc, argv, index, "Argument is not an integer.");
                 }
-                else if (n < SIGRTMIN || n > SIGRTMAX) {
+                else if (n < sig_min || n > sig_max) {
                     print_error(argc, argv, index, "Invalid signal value.");
                 }
-                else {
-                    signal(n, opt);
+                else if (opt == _default) {
+                    signal(n, SIG_DFL);
                 }
-                open_flags = 0;
+                else if (opt == _ignore) {
+                    signal(n, SIG_IGN);
+                }
+                else {
+                    signal(n, handler);
+                }
                 break;
-            case 'p':
-            case 'a':
+            case _pause:
+            case _abort:
+                open_flags = 0;
                 if (verbose_flag) {
                     printf("\n");
                     verbose_flag2 = 0;
                 }
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
+                    break;
+                }
+                if (opt == _pause) {
+                    pause();
+                }
+                else {
+                    raise(SIGSEGV);
+                }
+                break;
+            case _close:
+                open_flags = 0;
+                if (verbose_flag) {
+                    printf("\n");
+                    verbose_flag2 = 0;
+                }
+                if (args != 2) {
+                    print_error(argc, argv, index, arg_error);
                     open_flags = 0;
                     break;
                 }
-                if (opt == 'p') {
-                    pause();
+                int close_no = strtol(argv[index+1], &end, 10);
+                if (end == argv[index]) {
+                    print_error(argc, argv, index, "Argument is not an integer.");
                 }
-                else if (opt == 'a') {
-                    signal (11. SIG_DFL);
-                    int* a = NULL;
-                    *a = 0xBADE66E27;
+                else if (close_no < 0 || close_no >= no_of_files) {
+                    print_error(argc, argv, index, "Invalid file number.");
                 }
+                else if (close(filesystem[close_no]) == -1) {
+                    print_error(argc, argv, index, NULL);
+                }
+                else {
+                    filesystem[close_no] = -1;
+                }
+                break;
+            case _wait:
+                open_flags = 0;
+                if (verbose_flag) {
+                    printf("\n");
+                    verbose_flag2 = 0;
+                }
+                if (args != 1) {
+                    print_error(argc, argv, index, arg_error);
+                }
+                int stat_loc;
+                int status;
+                for (i = 0; i < no_of_processes; i++) {
+                    waitpid(processes[i], &stat_loc, WEXITSTATUS(status));
+                    exit_status = max(exit_status, status);
+                    cycle_option(argc, argv, commands[i], 1, stdout);
+                    fprintf(stdout, " exited with status %d.\n", status);
+                }
+                no_of_processes = 0;
+                break;
             default:
                 break;
         }
@@ -324,6 +420,3 @@ void handler(int n) {
     fprintf(stderr, "%d%s\n", n, " caught");
     exit(n);
 }
-
-
-
