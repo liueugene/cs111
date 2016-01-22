@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
                     pause();
                 }
                 else {
-                    signal(11, SIG_DFL);
+                    /* signal(11, SIG_DFL); */
                     raise(SIGSEGV);
                 }
                 break;
@@ -360,6 +360,10 @@ int main(int argc, char *argv[])
                 for (i = 0; i < no_of_processes; i++) {
                     waitpid(processes[i], &stat_loc, 0);
                     int status = WEXITSTATUS(stat_loc);
+                    if (WIFSIGNALED(stat_loc)) {
+                        int sig_no = WTERMSIG(stat_loc);
+                        fprintf(stderr, "%s\n", strsignal(sig_no));
+                    }
                     exit_status = max(exit_status, status);
                     cycle_option(argc, argv, commands[i], 1, stdout);
                     fprintf(stdout, " exited with status %d.\n", status);
