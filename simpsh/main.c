@@ -356,12 +356,12 @@ int main(int argc, char *argv[])
                     print_error(argc, argv, index, arg_error);
                 }
                 int stat_loc;
-                int status = 0;
                 for (i = 0; i < no_of_processes; i++) {
-                    waitpid(processes[i], &stat_loc, WEXITSTATUS(status));
-                    exit_status = max(exit_status, stat_loc);
+                    waitpid(processes[i], &stat_loc, 0);
+                    int status = WEXITSTATUS(stat_loc);
+                    exit_status = max(exit_status, status);
                     cycle_option(argc, argv, commands[i], 1, stdout);
-                    fprintf(stdout, " exited with status %d.\n", stat_loc);
+                    fprintf(stdout, " exited with status %d.\n", status);
                 }
                 no_of_processes = 0;
                 break;
