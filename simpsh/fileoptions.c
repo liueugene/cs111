@@ -27,7 +27,7 @@ int open_file(char *filename, int flags)
     return 1;
 }
 
-void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd, int stderr_fd)
+int call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd, int stderr_fd)
 {
     pid_t pid = fork();
     
@@ -45,10 +45,7 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
         }
 
         execvp(argv[0], argv);
-        
-        perror(NULL);
-        exit(1);
-        
+        return -1;
     } else { //parent process
         if (no_of_processes == max_processes) {
             max_processes = max_processes * 2;
@@ -64,6 +61,7 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
         processes[no_of_processes] = pid;
         commands[no_of_processes] = index;
         no_of_processes++;
+        exit(1);
     }
 }
 

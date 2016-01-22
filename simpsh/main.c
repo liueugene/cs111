@@ -28,6 +28,7 @@ int* processes;
 int* commands;
 int no_of_processes = 0;
 int max_processes = 5;
+int* signals;
 
 
 #define _command 100
@@ -49,12 +50,16 @@ int main(int argc, char *argv[])
     filesystem = malloc(max_files * sizeof(int));
     processes = malloc(max_processes * sizeof(int));
     commands = malloc(max_processes * sizeof(int));
+    signals = malloc((sig_max + 1) * sizeof(int));
 
-    if (filesystem == NULL || processes == NULL || commands == NULL) { 
+    if (filesystem == NULL || processes == NULL || commands == NULL || signals == NULL) { 
         perror("malloc");
         exit(1);
     }
 
+    for (int j = 0; j <= sig_max; j++) {
+        signals[j] = 0;
+    }
 
     ignore_list = malloc(max_ignores * sizeof(int));
 
@@ -256,7 +261,10 @@ int main(int argc, char *argv[])
                 }
                 args_list[i] = NULL;
                 optind = index + i;
-                call_command(num_args + 1, args_list, index, stdin_real_fd, stdout_real_fd, stderr_real_fd);
+                int returnval = call_command(num_args + 1, args_list, index, stdin_real_fd, stdout_real_fd, stderr_real_fd);
+                if (returnval == -1) {
+                    print_error(argc, argv, index - 4, NULL);
+                }
                 free(args_list);
                 break;
             case _verbose:
@@ -295,12 +303,15 @@ int main(int argc, char *argv[])
                 }
                 else if (opt == _default) {
                     signal(n, SIG_DFL);
+                    signals[n] = 0;
                 }
                 else if (opt == _ignore) {
                     signal(n, SIG_IGN);
+                    signals[n] = 1;
                 }
                 else {
                     signal(n, handler);
+                    signals[n] = 2;
                 }
                 break;
             case _pause:
@@ -362,7 +373,16 @@ int main(int argc, char *argv[])
                     int status = WEXITSTATUS(stat_loc);
                     if (WIFSIGNALED(stat_loc)) {
                         int sig_no = WTERMSIG(stat_loc);
-                        fprintf(stderr, "%s\n", strsignal(sig_no));
+                        switch(signals[sig_no]) {
+                            case 0:
+                                fprintf(stderr, "%s\n", strsignal(sig_no));
+                                exit(max(exit_status, sig_no));
+                            case 1:
+                                break;
+                            case 2:
+                                handler(sig_no);
+                                break;
+                        }
                     }
                     exit_status = max(exit_status, status);
                     cycle_option(argc, argv, commands[i], 1, stdout);
