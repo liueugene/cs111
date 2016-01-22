@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
                     print_error(argc, argv, index, arg_error);
                 }
                 int stat_loc;
-                int status;
+                int status = 0;
                 for (i = 0; i < no_of_processes; i++) {
                     waitpid(processes[i], &stat_loc, WEXITSTATUS(status));
                     exit_status = max(exit_status, status);
