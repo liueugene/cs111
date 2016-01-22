@@ -261,10 +261,7 @@ int main(int argc, char *argv[])
                 }
                 args_list[i] = NULL;
                 optind = index + i;
-                int returnval = call_command(num_args + 1, args_list, index, stdin_real_fd, stdout_real_fd, stderr_real_fd);
-                if (returnval == -1) {
-                    print_error(argc, argv, index - 4, NULL);
-                }
+                call_command(num_args + 1, args_list, index, stdin_real_fd, stdout_real_fd, stderr_real_fd);
                 free(args_list);
                 break;
             case _verbose:

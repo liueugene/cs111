@@ -25,7 +25,7 @@ extern int sig_max;
 
 int max(int a, int b);
 int open_file(char *filename, int flags);
-int call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd, int stderr_fd);
+void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd, int stderr_fd);
 void add_ignore(int n);
 int should_ignore(int n);
 
