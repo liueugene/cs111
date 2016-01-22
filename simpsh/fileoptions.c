@@ -43,9 +43,11 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
         if (dup2(stderr_fd, 2) < 0) {
             exit(1);
         }
-        if (execvp(argv[0], argv) < 0) {
-            exit(1);
-        }
+
+        execvp(argv[0], argv);
+        
+        perror(NULL);
+        exit(1);
         
     } else { //parent process
         if (no_of_processes == max_processes) {
