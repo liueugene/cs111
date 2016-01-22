@@ -44,6 +44,10 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
             exit(1);
         }
 
+        /* for (int i = 0; i < no_of_files; i++) {
+            close(filesystem[i]);
+        } */ /* bug fix for pipe? (Elton said to close all fd in child...) */
+
         execvp(argv[0], argv);
         perror(NULL);
         exit(1);
@@ -63,29 +67,4 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
         commands[no_of_processes] = index;
         no_of_processes++;
     }
-}
-
-void add_ignore(int n)
-{
-    if (no_of_ignores == max_ignores) {
-        max_ignores = max_ignores * 2;
-        int* temp_ignore_list = realloc(ignore_list, max_files * sizeof(int));
-        if (temp_ignore_list == NULL) {
-                fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
-                exit(max(exit_status, 1));
-        }
-        ignore_list = temp_ignore_list;
-    }
-    ignore_list[no_of_ignores] = n;
-    no_of_ignores++;
-}
-
-int should_ignore(int n)
-{
-    for (int i = 0; i < no_of_ignores; i++) {
-        if (ignore_list[i] == n) {
-            return 1;
-        }
-    }
-    return 0;
 }

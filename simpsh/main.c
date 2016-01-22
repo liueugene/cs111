@@ -18,9 +18,6 @@ int open_flags = 0;
 int no_of_files = 0;
 int max_files = 5;
 int* filesystem;
-int no_of_ignores = 0;
-int max_ignores = 5;
-int* ignore_list;
 int exit_status = 0;
 int sig_min = 0;
 int sig_max = 63;
@@ -28,7 +25,6 @@ int* processes;
 int* commands;
 int no_of_processes = 0;
 int max_processes = 5;
-int* signals;
 
 
 #define _command 100
@@ -50,20 +46,8 @@ int main(int argc, char *argv[])
     filesystem = malloc(max_files * sizeof(int));
     processes = malloc(max_processes * sizeof(int));
     commands = malloc(max_processes * sizeof(int));
-    signals = malloc((sig_max + 1) * sizeof(int));
 
-    if (filesystem == NULL || processes == NULL || commands == NULL || signals == NULL) { 
-        perror("malloc");
-        exit(1);
-    }
-
-    for (int j = 0; j <= sig_max; j++) {
-        signals[j] = 0;
-    }
-
-    ignore_list = malloc(max_ignores * sizeof(int));
-
-    if (ignore_list == NULL) {
+    if (filesystem == NULL || processes == NULL || commands == NULL) { 
         perror("malloc");
         exit(1);
     }
@@ -300,15 +284,12 @@ int main(int argc, char *argv[])
                 }
                 else if (opt == _default) {
                     signal(n, SIG_DFL);
-                    signals[n] = 0;
                 }
                 else if (opt == _ignore) {
                     signal(n, SIG_IGN);
-                    signals[n] = 1;
                 }
                 else {
                     signal(n, handler);
-                    signals[n] = 2;
                 }
                 break;
             case _pause:
@@ -370,16 +351,7 @@ int main(int argc, char *argv[])
                     int status = WEXITSTATUS(stat_loc);
                     if (WIFSIGNALED(stat_loc)) {
                         int sig_no = WTERMSIG(stat_loc);
-                        switch(signals[sig_no]) {
-                            case 0:
-                                fprintf(stderr, "%s\n", strsignal(sig_no));
-                                exit(max(exit_status, sig_no));
-                            case 1:
-                                break;
-                            case 2:
-                                handler(sig_no);
-                                break;
-                        }
+                        raise(sig_no);
                     }
                     exit_status = max(exit_status, status);
                     cycle_option(argc, argv, commands[i], 1, stdout);
@@ -392,7 +364,8 @@ int main(int argc, char *argv[])
         }
     }
     free(filesystem);
-    free(ignore_list);
+    free(processes);
+    free(commands);
     return exit_status;
 }
 
