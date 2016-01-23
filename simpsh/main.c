@@ -13,7 +13,7 @@ int max(int a, int b);
 void handler(int n);
 
 int verbose_flag = 0;
-int verbose_flag2 = 0;
+int v_newline_flag = 0;
 int open_flags = 0;
 int no_of_files = 0;
 int max_files = 5;
@@ -96,6 +96,7 @@ int main(int argc, char *argv[])
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
         index = optind - 1;
+        
         switch (opt) {
             case O_RDWR:
             case O_RDONLY:
@@ -106,22 +107,24 @@ int main(int argc, char *argv[])
             case _catch:
             case _close:
                 index--;
+            case _verbose:
+            case _pause:
+            case _abort:
+            case _wait:
+                v_newline_flag = 1;
                 break;
             default:
+                v_newline_flag = 0;
                 break;
-        }
-
-        if (verbose_flag) {
-            if (verbose_flag2) {
-                printf(" ");
-            }
-            else {
-                verbose_flag2 = 1;
-            }
         }
 
         int args = cycle_option(argc, argv, index, verbose_flag, stdout);
 
+        if (verbose_flag) {
+            char whitespace = (v_newline_flag) ? '\n' : ' ';
+            putchar(whitespace);
+        }
+        
         switch (opt) {
             case O_APPEND:
             case O_CLOEXEC:
@@ -144,10 +147,6 @@ int main(int argc, char *argv[])
             case O_RDWR:
             case O_RDONLY:
             case O_WRONLY:
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                }
                 open_flags |= opt;
                 if (args != 2) {
                     print_error(argc, argv, index, arg_error);
@@ -163,10 +162,6 @@ int main(int argc, char *argv[])
                 break;
             case _command:
                 open_flags = 0;
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                }
                 if (args < 5) {
                     print_error(argc, argv, index, arg_error);
                     if (args == 1) {
@@ -250,8 +245,6 @@ int main(int argc, char *argv[])
                 break;
             case _verbose:
                 if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
                     print_error(argc, argv, index, "--verbose has already been called.");
                 }
                 if (args != 1) {
@@ -264,10 +257,6 @@ int main(int argc, char *argv[])
             case _ignore:
             case _catch:
                 open_flags = 0;
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                }
                 if (args != 2) {
                     print_error(argc, argv, index, arg_error);
                     if (args == 1) {
@@ -295,10 +284,6 @@ int main(int argc, char *argv[])
             case _pause:
             case _abort:
                 open_flags = 0;
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                }
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
                     break;
@@ -313,10 +298,6 @@ int main(int argc, char *argv[])
                 break;
             case _close:
                 open_flags = 0;
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                }
                 if (args != 2) {
                     print_error(argc, argv, index, arg_error);
                     open_flags = 0;
@@ -338,10 +319,6 @@ int main(int argc, char *argv[])
                 break;
             case _wait:
                 open_flags = 0;
-                if (verbose_flag) {
-                    printf("\n");
-                    verbose_flag2 = 0;
-                }
                 if (args != 1) {
                     print_error(argc, argv, index, arg_error);
                 }
@@ -353,12 +330,6 @@ int main(int argc, char *argv[])
                         status = WEXITSTATUS(stat_loc);
                     } else if (WIFSIGNALED(stat_loc)) {
                         int sig_no = WTERMSIG(stat_loc);
-                        int sig_type = signal(sig_no, SIG_DFL);
-                        if (sig_type != SIG_IGN) {
-                            cycle_option(argc, argv, commands[i] - 4, 1, stderr);
-                            fprintf(stderr, ": ");
-                        }
-                        signal(sig_no, sig_type);
                         raise(sig_no);
                         status = 1;
                     }
