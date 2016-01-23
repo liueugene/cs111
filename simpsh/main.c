@@ -353,6 +353,12 @@ int main(int argc, char *argv[])
                         status = WEXITSTATUS(stat_loc);
                     } else if (WIFSIGNALED(stat_loc)) {
                         int sig_no = WTERMSIG(stat_loc);
+                        int sig_type = signal(sig_no, SIG_DFL);
+                        if (sig_type != SIG_IGN) {
+                            cycle_option(argc, argv, commands[i] - 4, 1, stderr);
+                            fprintf(stderr, ": ");
+                        }
+                        signal(sig_no, sig_type);
                         raise(sig_no);
                         status = 1;
                     }
