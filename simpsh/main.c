@@ -93,10 +93,13 @@ int main(int argc, char *argv[])
     int index;
     char* arg_error = "Incorrect number of arguments.";
     char *end;
+    char whitespace;
+    int expected_num_args;
 
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
         index = optind - 1;
-        
+        expected_num_args = 1;
+
         switch (opt) {
             case O_RDWR:
             case O_RDONLY:
@@ -107,22 +110,41 @@ int main(int argc, char *argv[])
             case _catch:
             case _close:
                 index--;
+                expected_num_args = 2;
             case _verbose:
             case _pause:
             case _abort:
             case _wait:
-                v_newline_flag = 1;
+                whitespace = '\n';
                 break;
             default:
-                v_newline_flag = 0;
+                whitespace = ' ';
                 break;
         }
 
         int args = cycle_option(argc, argv, index, verbose_flag, stdout);
 
         if (verbose_flag) {
-            char whitespace = (v_newline_flag) ? '\n' : ' ';
             putchar(whitespace);
+        }
+
+        if (opt != _command) {
+            if (args != expected_num_args) {
+                print_error(argc, argv, index, arg_error);
+                if (expected_num_args == 2 && args == 1) {
+                    optind--;
+                }
+                continue;
+            }
+        }
+        else {
+            if (args < 5) {
+                print_error(argc, argv, index, arg_error);
+                if (args == 1) {
+                    optind--;
+                }
+                continue;
+            }
         }
         
         switch (opt) {
@@ -139,22 +161,13 @@ int main(int argc, char *argv[])
             case O_SYNC:
 #endif
             case O_TRUNC:
-                if (args != 1) {
-                    print_error(argc, argv, index, arg_error);
-                }
                 open_flags |= opt;
                 break;
             case O_RDWR:
             case O_RDONLY:
             case O_WRONLY:
                 open_flags |= opt;
-                if (args != 2) {
-                    print_error(argc, argv, index, arg_error);
-                    if (args == 1) {
-                        optind--;
-                    }
-                }
-                else if(!open_file(optarg, open_flags)) {
+                if (!open_file(optarg, open_flags)) {
                     print_error(argc, argv, index, NULL);
                     exit_status = max(1, exit_status);
                 }
@@ -162,13 +175,6 @@ int main(int argc, char *argv[])
                 break;
             case _command:
                 open_flags = 0;
-                if (args < 5) {
-                    print_error(argc, argv, index, arg_error);
-                    if (args == 1) {
-                        optind--;
-                    }
-                    break;
-                }
                 //get the stdin file descriptor
                 index++;
                 int stdin_logical_fd = strtol(argv[index], &end, 10);
@@ -247,9 +253,6 @@ int main(int argc, char *argv[])
                 if (verbose_flag) {
                     print_error(argc, argv, index, "--verbose has already been called.");
                 }
-                if (args != 1) {
-                    print_error(argc, argv, index, arg_error);
-                }
                 open_flags = 0;
                 verbose_flag = 1;
                 break;
@@ -257,13 +260,6 @@ int main(int argc, char *argv[])
             case _ignore:
             case _catch:
                 open_flags = 0;
-                if (args != 2) {
-                    print_error(argc, argv, index, arg_error);
-                    if (args == 1) {
-                        optind--;
-                    }
-                    break;
-                }
                 int n = strtol(argv[index+1], &end, 10);
                 if (end == argv[index]) {
                     print_error(argc, argv, index, "Argument is not an integer.");
@@ -284,10 +280,6 @@ int main(int argc, char *argv[])
             case _pause:
             case _abort:
                 open_flags = 0;
-                if (args != 1) {
-                    print_error(argc, argv, index, arg_error);
-                    break;
-                }
                 if (opt == _pause) {
                     pause();
                 }
@@ -298,11 +290,6 @@ int main(int argc, char *argv[])
                 break;
             case _close:
                 open_flags = 0;
-                if (args != 2) {
-                    print_error(argc, argv, index, arg_error);
-                    open_flags = 0;
-                    break;
-                }
                 int close_no = strtol(argv[index+1], &end, 10);
                 if (end == argv[index]) {
                     print_error(argc, argv, index, "Argument is not an integer.");
@@ -319,12 +306,10 @@ int main(int argc, char *argv[])
                 break;
             case _wait:
                 open_flags = 0;
-                if (args != 1) {
-                    print_error(argc, argv, index, arg_error);
-                }
                 int stat_loc;
                 for (i = 0; i < no_of_processes; i++) {
-                    waitpid(processes[i], &stat_loc, 0);
+                    waitpid(processes[i], &stat_loc, 0); 
+                    //returns -1 if error. maybe do something. . . ?
                     int status;
                     if (WIFEXITED(stat_loc)) {
                         status = WEXITSTATUS(stat_loc);
