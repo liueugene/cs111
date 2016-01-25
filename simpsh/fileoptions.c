@@ -6,11 +6,13 @@ int open_file(char *filename, int flags)
     if (no_of_files == max_files) {
         max_files = max_files * 2;
         int* temp_filesystem = realloc(filesystem, max_files * sizeof(int));
-        if (temp_filesystem == NULL) {
+        int* temp_ispipe = realloc(ispipe, max_files * sizeof(int));
+        if (temp_filesystem == NULL || temp_ispipe == NULL) {
             fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
             exit(max(exit_status, 1));
         }
         filesystem = temp_filesystem;
+        ispipe = temp_ispipe;
     }
     int temp_fd_holder = open(filename, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (temp_fd_holder == -1) {
@@ -23,6 +25,7 @@ int open_file(char *filename, int flags)
     }
     printf("%s\n", test);
     free(test); */
+    ispipe[no_of_files] = 0;
     no_of_files++;
     return 1;
 }
@@ -44,9 +47,9 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
             exit(1);
         }
 
-        /* for (int i = 0; i < no_of_files; i++) {
+        for (int i = 0; i < no_of_files; i++) {
             close(filesystem[i]);
-        } */ /* bug fix for pipe? (Elton said to close all fd in child...) */
+        } /* bug fix for pipe? (Elton said to close all fd in child...) */
 
         execvp(argv[0], argv);
         perror(NULL);

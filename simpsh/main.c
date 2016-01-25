@@ -22,6 +22,7 @@ int exit_status = 0;
 int sig_min = 0;
 int sig_max = 63;
 int* processes;
+int* ispipe;
 int* commands;
 int no_of_processes = 0;
 int max_processes = 5;
@@ -36,6 +37,8 @@ int max_processes = 5;
 #define _pause 106
 #define _close 107
 #define _wait 108
+#define _pipe 109
+#define _profile 110
 
 #ifndef O_RSYNC
 #define O_RSYNC O_SYNC
@@ -44,12 +47,18 @@ int max_processes = 5;
 int main(int argc, char *argv[])
 {
     filesystem = malloc(max_files * sizeof(int));
+    ispipe = malloc(max_files * sizeof(int));
     processes = malloc(max_processes * sizeof(int));
     commands = malloc(max_processes * sizeof(int));
 
-    if (filesystem == NULL || processes == NULL || commands == NULL) { 
+    if (filesystem == NULL || ispipe == NULL || processes == NULL || commands == NULL) { 
         perror("malloc");
         exit(1);
+    }
+
+    int j = 0;
+    for (; j < max_files; j++) {
+        ispipe[j] = 0;
     }
 
     int temp = cycle_option(argc, argv, 0, 0, NULL);
@@ -71,6 +80,9 @@ int main(int argc, char *argv[])
         {"pause", no_argument, NULL, _pause},
         {"close", required_argument, NULL, _close},
         {"wait", no_argument, NULL, _wait},
+        {"pipe", no_argument, NULL, _pipe},
+        {"profile", no_argument, NULL, _profile},
+
 
         //flags
         {"append", no_argument, NULL, O_APPEND},
@@ -111,10 +123,12 @@ int main(int argc, char *argv[])
             case _close:
                 index--;
                 expected_num_args = 2;
+            case _pipe:
             case _verbose:
             case _pause:
             case _abort:
             case _wait:
+            case _profile:
                 whitespace = '\n';
                 break;
             default:
@@ -172,6 +186,49 @@ int main(int argc, char *argv[])
                     exit_status = max(1, exit_status);
                 }
                 open_flags = 0;
+                break;
+            case _pipe: {
+                int pipefd[2];
+                open_flags = (open_flags & O_NONBLOCK) | (open_flags & O_CLOEXEC);
+                //if (pipe2(pipefd, open_flags) == -1) {
+                if (pipe(pipefd) == -1) {
+                    print_error(argc, argv, index, NULL);
+                    exit(max(exit_status, 1));
+                }
+                if ((no_of_files + 1) >= max_files) {
+                    max_files = max_files * 2;
+                    int* temp_filesystem = realloc(filesystem, max_files * sizeof(int));
+                    int* temp_ispipe = realloc(ispipe, max_files * sizeof(int));
+                    if (temp_filesystem == NULL || temp_ispipe == NULL) {
+                        fprintf(stderr, "%s\n", "Unable to allocate space for the array.");
+                        exit(max(exit_status, 1));
+                    }
+                    filesystem = temp_filesystem;
+                    ispipe = temp_ispipe;
+                }
+                open_flags = 0;
+                filesystem[no_of_files] = pipefd[0];
+                ispipe[no_of_files] = 1;
+                filesystem[no_of_files + 1] = pipefd[1];
+                ispipe[no_of_files + 1] = 1;
+                no_of_files += 2;
+                break;
+            }
+            case _close:
+                open_flags = 0;
+                int close_no = strtol(argv[index+1], &end, 10);
+                if (end == argv[index]) {
+                    print_error(argc, argv, index, "Argument is not an integer.");
+                }
+                else if (close_no < 0 || close_no >= no_of_files) {
+                    print_error(argc, argv, index, "Invalid file number.");
+                }
+                else if (close(filesystem[close_no]) == -1) {
+                    print_error(argc, argv, index, NULL);
+                }
+                else {
+                    filesystem[close_no] = -1;
+                }
                 break;
             case _command:
                 open_flags = 0;
@@ -247,6 +304,22 @@ int main(int argc, char *argv[])
                 args_list[i] = NULL;
                 optind = index + i;
                 call_command(num_args + 1, args_list, index, stdin_real_fd, stdout_real_fd, stderr_real_fd);
+
+                if (ispipe[stdin_logical_fd] == 1) {
+                    close(stdin_real_fd);
+                    filesystem[stdin_logical_fd] = -1;
+                }
+
+                if (ispipe[stdout_logical_fd] == 1) {
+                    close(stdout_real_fd);
+                    filesystem[stdout_logical_fd] = -1;
+                }
+
+                if (ispipe[stderr_logical_fd] == 1) {
+                    close(stderr_real_fd);
+                    filesystem[stderr_logical_fd] = -1;
+                }
+
                 free(args_list);
                 break;
             case _verbose:
@@ -288,41 +361,26 @@ int main(int argc, char *argv[])
                     raise(SIGSEGV);
                 }
                 break;
-            case _close:
-                open_flags = 0;
-                int close_no = strtol(argv[index+1], &end, 10);
-                if (end == argv[index]) {
-                    print_error(argc, argv, index, "Argument is not an integer.");
-                }
-                else if (close_no < 0 || close_no >= no_of_files) {
-                    print_error(argc, argv, index, "Invalid file number.");
-                }
-                else if (close(filesystem[close_no]) == -1) {
-                    print_error(argc, argv, index, NULL);
-                }
-                else {
-                    filesystem[close_no] = -1;
-                }
-                break;
             case _wait:
                 open_flags = 0;
                 int stat_loc;
                 for (i = 0; i < no_of_processes; i++) {
                     waitpid(processes[i], &stat_loc, 0); 
                     //returns -1 if error. maybe do something. . . ?
-                    int status;
+                    int status = 1;
                     if (WIFEXITED(stat_loc)) {
                         status = WEXITSTATUS(stat_loc);
                     } else if (WIFSIGNALED(stat_loc)) {
                         int sig_no = WTERMSIG(stat_loc);
                         raise(sig_no);
-                        status = 1;
                     }
                     exit_status = max(exit_status, status);
                     cycle_option(argc, argv, commands[i], 1, stdout);
                     fprintf(stdout, " exited with status %d.\n", status);
                 }
                 no_of_processes = 0;
+                break;
+            case _profile:
                 break;
             default:
                 break;
@@ -331,7 +389,7 @@ int main(int argc, char *argv[])
     free(filesystem);
     free(processes);
     free(commands);
-    return exit_status;
+    exit(exit_status);
 }
 
 int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_to)
