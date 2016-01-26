@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wno-unused
+CFLAGS = -std=c11 -g -Wall -Wextra -Wno-unused
 LAB = 1
 DISTDIR = lab1-EugeneLiu_CameronIto
 
