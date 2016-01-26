@@ -375,8 +375,9 @@ int main(int argc, char *argv[])
                         raise(sig_no);
                     }
                     exit_status = max(exit_status, status);
+                    fprintf(stdout, "%d ", status);
                     cycle_option(argc, argv, commands[i], 1, stdout);
-                    fprintf(stdout, " exited with status %d.\n", status);
+                    putchar('\n');
                 }
                 no_of_processes = 0;
                 break;
