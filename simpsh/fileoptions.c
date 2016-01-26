@@ -49,7 +49,7 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
 
         for (int i = 0; i < no_of_files; i++) {
             close(filesystem[i]);
-        } /* bug fix for pipe? (Elton said to close all fd in child...) */
+        }
 
         execvp(argv[0], argv);
         perror(NULL);
