@@ -50,8 +50,7 @@ fi
 touch temporary_file18.tmp
 printf "WORLD\nHELLO\nGOODBYE\nTHINGS" > temporary_file18.tmp
 touch temporary_file19.tmp
-../simpsh --rdonly temporary_file18.tmp --pipe --pipe --creat --trunc --wronly temporary_file20.tmp --creat --append --wronly temporary_file21.tmp \
---command 3 5 6 tr A-Z a-z --command 0 2 6 sort --command 1 4 6 cat temporary_file19.tmp --wait
+../simpsh --rdonly temporary_file18.tmp --pipe --pipe --creat --trunc --wronly temporary_file20.tmp --creat --append --wronly temporary_file21.tmp --command 3 5 6 tr A-Z a-z --command 0 2 6 sort --command 1 4 6 cat temporary_file19.tmp - --wait > /dev/null
 touch temporary_file22.tmp
 touch temporary_file23.tmp
 (sort < temporary_file18.tmp | cat temporary_file19.tmp - | tr A-Z a-z > temporary_file22.tmp) 2>> temporary_file23.tmp
