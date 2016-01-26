@@ -54,6 +54,11 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
         execvp(argv[0], argv);
         perror(NULL);
         exit(1);
+        
+    } else if (pid == -1) { //error forking
+        perror("fork");
+        exit_status = max(exit_status, 1);
+        
     } else { //parent process
         if (no_of_processes == max_processes) {
             max_processes = max_processes * 2;
