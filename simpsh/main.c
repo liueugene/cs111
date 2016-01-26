@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -190,8 +191,7 @@ int main(int argc, char *argv[])
             case _pipe: {
                 int pipefd[2];
                 open_flags = (open_flags & O_NONBLOCK) | (open_flags & O_CLOEXEC);
-                //if (pipe2(pipefd, open_flags) == -1) {
-                if (pipe(pipefd) == -1) {
+                if (pipe2(pipefd, open_flags) == -1) {
                     print_error(argc, argv, index, NULL);
                     exit(max(exit_status, 1));
                 }
