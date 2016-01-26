@@ -95,8 +95,8 @@ int main(int argc, char *argv[])
         {"nonblock", no_argument, NULL, O_NONBLOCK},
         {"rsync", no_argument, NULL, O_RSYNC},
         {"sync", no_argument, NULL, O_SYNC},
-        {"trunc", no_argument, NULL, O_TRUNC}
-
+        {"trunc", no_argument, NULL, O_TRUNC},
+        {0, 0, 0, 0}
     };
     
     int option_index = 0;
