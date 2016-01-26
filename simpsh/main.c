@@ -429,10 +429,7 @@ void print_error(int argc, char* argv[], int long_index, char* error)
 
 int max(int a, int b)
 {
-    if (a > b) {
-        return a;
-    }
-    return b;
+    return (a > b) ? a : b;
 }
 
 void handler(int n) {
