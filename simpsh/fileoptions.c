@@ -47,7 +47,8 @@ void call_command(int argc, char* argv[], int index, int stdin_fd, int stdout_fd
             exit(1);
         }
 
-        for (int i = 0; i < no_of_files; i++) {
+        int i;
+        for (i = 0; i < no_of_files; i++) {
             close(filesystem[i]);
         }
 
