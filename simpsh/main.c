@@ -20,8 +20,6 @@ int no_of_files = 0;
 int max_files = 5;
 int* filesystem;
 int exit_status = 0;
-int sig_min = 0;
-int sig_max = 63;
 int* processes;
 int* ispipe;
 int* commands;
@@ -333,22 +331,26 @@ int main(int argc, char *argv[])
             case _ignore:
             case _catch:
                 open_flags = 0;
+                int retval;
                 int n = strtol(argv[index+1], &end, 10);
                 if (end == argv[index]) {
                     print_error(argc, argv, index, "Argument is not an integer.");
+                    break;
                 }
-                else if (n < sig_min || n > sig_max) {
-                    print_error(argc, argv, index, "Invalid signal value.");
-                }
-                else if (opt == _default) {
-                    signal(n, SIG_DFL);
+                
+                if (opt == _default) {
+                    retval = signal(n, SIG_DFL);
                 }
                 else if (opt == _ignore) {
-                    signal(n, SIG_IGN);
+                    retval = signal(n, SIG_IGN);
                 }
                 else {
-                    signal(n, handler);
+                    retval = signal(n, handler);
                 }
+                
+                if (retval == SIG_ERR)
+                    print_error(argc, argv, index, NULL);
+                
                 break;
             case _pause:
             case _abort:
