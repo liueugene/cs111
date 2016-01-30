@@ -190,7 +190,11 @@ int main(int argc, char *argv[])
                 break;
             case _pipe: {
                 int pipefd[2];
-                open_flags = (open_flags & O_NONBLOCK) | (open_flags & O_CLOEXEC);
+                if (open_flags & (~(O_NONBLOCK | O_CLOEXEC))){
+                    print_error(argc, argv, index, "Invalid flag for pipe.");
+                    open_flags = 0;
+                    break;
+                }
                 if (pipe2(pipefd, open_flags) == -1) {
                     print_error(argc, argv, index, NULL);
                     exit(max(exit_status, 1));
