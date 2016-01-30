@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/resource.h>
 #include "fileoptions.h"
 
 int cycle_option(int argc, char* argv[], int long_index, int print, FILE *print_to);
@@ -15,6 +16,7 @@ void handler(int n);
 
 int verbose_flag = 0;
 int v_newline_flag = 0;
+int profile_flag = 0;
 int open_flags = 0;
 int no_of_files = 0;
 int max_files = 5;
@@ -231,56 +233,52 @@ int main(int argc, char *argv[])
             case _command:
                 open_flags = 0;
                 //get the stdin file descriptor
-                index++;
-                int stdin_logical_fd = strtol(argv[index], &end, 10);
-                if (end == argv[index]) {
-                    print_error(argc, argv, index - 1, "Invalid file descriptor input for stdin.");
+                int stdin_logical_fd = strtol(argv[index + 1], &end, 10);
+                if (end == argv[index + 1]) {
+                    print_error(argc, argv, index, "Invalid file descriptor input for stdin.");
                     break;
                 }
                 if ((stdin_logical_fd >= no_of_files) || (stdin_logical_fd < 0)) {
-                    print_error(argc, argv, index - 1, "Invalid file descriptor number for stdin.");
+                    print_error(argc, argv, index, "Invalid file descriptor number for stdin.");
                     break;
                 }
                 if (filesystem[stdin_logical_fd] == -1) {
-                    print_error(argc, argv, index - 1, "stdin file number has been closed.");
+                    print_error(argc, argv, index, "stdin file number has been closed.");
                     break;
                 }
                 int stdin_real_fd = filesystem[stdin_logical_fd];
                 //get the stdout file descriptor
-                index++;
-                int stdout_logical_fd = strtol(argv[index], &end, 10);
-                if (end == argv[index]) {
-                    print_error(argc, argv, index - 2, "Invalid file descriptor input for stdout.");
+                int stdout_logical_fd = strtol(argv[index + 2], &end, 10);
+                if (end == argv[index + 2]) {
+                    print_error(argc, argv, index, "Invalid file descriptor input for stdout.");
                     break;
                 }
                 if ((stdout_logical_fd >= no_of_files) || (stdout_logical_fd < 0)) {
-                    print_error(argc, argv, index - 2, "Invalid file descriptor number for stdout.");
+                    print_error(argc, argv, index, "Invalid file descriptor number for stdout.");
                     break;
                 }
                 if (filesystem[stdout_logical_fd] == -1) {
-                    print_error(argc, argv, index - 2, "stdout file number has been closed.");
+                    print_error(argc, argv, index, "stdout file number has been closed.");
                     break;
                 }
                 int stdout_real_fd = filesystem[stdout_logical_fd];
                 //get the stderr file descriptor
-                index++;
-                int stderr_logical_fd = strtol(argv[index], &end, 10);
-                if (end == argv[index]) {
-                    print_error(argc, argv, index - 3, "Invalid file descriptor input for stderr.");
+                int stderr_logical_fd = strtol(argv[index + 3], &end, 10);
+                if (end == argv[index + 3]) {
+                    print_error(argc, argv, index, "Invalid file descriptor input for stderr.");
                     break;
                 }
                 if ((stderr_logical_fd >= no_of_files) || (stderr_logical_fd < 0)) {
-                    print_error(argc, argv, index - 3, "Invalid file descriptor number for stderr.");
+                    print_error(argc, argv, index, "Invalid file descriptor number for stderr.");
                     break;
                 }
                 if (filesystem[stderr_logical_fd] == -1) {
-                    print_error(argc, argv, index - 3, "stderr file number has been closed.");
+                    print_error(argc, argv, index, "stderr file number has been closed.");
                     break;
                 }
                 int stderr_real_fd = filesystem[stderr_logical_fd];
                 //get the command string
-                index++;
-                char* command = argv[index];
+                char* command = argv[index + 4];
                 //find the number of args
                 int num_args = args - 5;
                 //get the args
@@ -295,13 +293,13 @@ int main(int argc, char *argv[])
                 i = 1;
                 if (num_args != 0) {
                     while(i <= num_args) {
-                        args_list[i] = argv[index + i];
+                        args_list[i] = argv[index + 4 + i];
                         i++;
                     }
                 }
                 args_list[i] = NULL;
-                optind = index + i;
-                call_command(num_args + 1, args_list, index, stdin_real_fd, stdout_real_fd, stderr_real_fd);
+                optind = index + 4 + i;
+                call_command(num_args + 1, args_list, index + 4, stdin_real_fd, stdout_real_fd, stderr_real_fd);
 
                 if (ispipe[stdin_logical_fd] == 1) {
                     close(stdin_real_fd);
@@ -384,9 +382,29 @@ int main(int argc, char *argv[])
                 no_of_processes = 0;
                 break;
             case _profile:
+                profile_flag = 1;
                 break;
             default:
                 break;
+        }
+        
+        if (profile_flag) {
+            struct rusage usage;
+            if (getrusage(RUSAGE_CHILDREN, &usage) == -1) {
+                print_error(argc, argv, index, NULL); 
+            } else {
+                cycle_option(argc, argv, index, 1, stdout);
+                
+                printf("\nUser CPU time: %ld.%06d\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+                printf("System CPU time: %ld.%06d\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+                printf("Maximum resident set size: %ld\n", usage.ru_maxrss);
+                printf("Page reclaims: %ld\n", usage.ru_minflt);
+                printf("Page faults: %ld\n", usage.ru_majflt);
+                printf("Block input operations: %ld\n", usage.ru_inblock);
+                printf("Block output operations: %ld\n", usage.ru_oublock);
+                printf("Voluntary context switches: %ld\n", usage.ru_nvcsw);
+                printf("Involuntary context switches: %ld\n", usage.ru_nivcsw);
+            }
         }
     }
     free(filesystem);
