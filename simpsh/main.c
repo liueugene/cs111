@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         //flags
         {"append", no_argument, NULL, O_APPEND},
         {"cloexec", no_argument, NULL, O_CLOEXEC},
-       {"creat", no_argument, NULL, O_CREAT},
+        {"creat", no_argument, NULL, O_CREAT},
         {"directory", no_argument, NULL, O_DIRECTORY},
         {"dsync", no_argument, NULL, O_DSYNC},
         {"excl", no_argument, NULL, O_EXCL},
