@@ -109,6 +109,10 @@ int main(int argc, char *argv[])
     char whitespace;
     int expected_num_args;
 
+    //get usage variables
+    struct rusage tmp_rusage;
+    getrusage(RUSAGE_CHILDREN, &tmp_rusage);
+
     while ((opt = getopt_long(argc, argv, "", options, &option_index)) != -1) {
         index = optind - 1;
         expected_num_args = 1;
@@ -391,26 +395,27 @@ int main(int argc, char *argv[])
             default:
                 break;
         }
-        
-        if (profile_flag) {
-            struct rusage usage;
-            if (getrusage(RUSAGE_CHILDREN, &usage) == -1) {
-                print_error(argc, argv, index, NULL); 
-            } else {
+
+        struct rusage usage;
+        if (getrusage(RUSAGE_CHILDREN, &usage) == -1) {
+            print_error(argc, argv, index, NULL); 
+        }        
+        else if (profile_flag) {
+
                 if (!verbose_flag)
                     cycle_option(argc, argv, index, 1, stdout);
                 
-                printf("\nUser CPU time: %ld.%06ld\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
-                printf("System CPU time: %ld.%06ld\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
-                printf("Maximum resident set size: %ld\n", usage.ru_maxrss);
-                printf("Page reclaims: %ld\n", usage.ru_minflt);
-                printf("Page faults: %ld\n", usage.ru_majflt);
-                printf("Block input operations: %ld\n", usage.ru_inblock);
-                printf("Block output operations: %ld\n", usage.ru_oublock);
-                printf("Voluntary context switches: %ld\n", usage.ru_nvcsw);
-                printf("Involuntary context switches: %ld\n", usage.ru_nivcsw);
-            }
+                printf("\nUser CPU time: %ld.%06ld\n", usage.ru_utime.tv_sec - tmp_rusage.ru_utime.tv_sec, usage.ru_utime.tv_usec - tmp_rusage.ru_utime.tv_usec);
+                printf("System CPU time: %ld.%06ld\n", usage.ru_stime.tv_sec - tmp_rusage.ru_stime.tv_sec, usage.ru_stime.tv_usec - tmp_rusage.ru_stime.tv_usec);
+                printf("Maximum resident set size: %ld\n", usage.ru_maxrss - tmp_rusage.ru_maxrss);
+                printf("Page reclaims: %ld\n", usage.ru_minflt - tmp_rusage.ru_minflt);
+                printf("Page faults: %ld\n", usage.ru_majflt - tmp_rusage.ru_majflt);
+                printf("Block input operations: %ld\n", usage.ru_inblock - tmp_rusage.ru_inblock);
+                printf("Block output operations: %ld\n", usage.ru_oublock - tmp_rusage.ru_oublock);
+                printf("Voluntary context switches: %ld\n", usage.ru_nvcsw - tmp_rusage.ru_nvcsw);
+                printf("Involuntary context switches: %ld\n", usage.ru_nivcsw - tmp_rusage.ru_nivcsw);
         }
+        tmp_rusage = usage;
     }
     free(filesystem);
     free(processes);
