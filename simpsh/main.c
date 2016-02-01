@@ -397,10 +397,11 @@ int main(int argc, char *argv[])
             if (getrusage(RUSAGE_CHILDREN, &usage) == -1) {
                 print_error(argc, argv, index, NULL); 
             } else {
-                cycle_option(argc, argv, index, 1, stdout);
+                if (!verbose_flag)
+                    cycle_option(argc, argv, index, 1, stdout);
                 
-                printf("\nUser CPU time: %ld.%03ld\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec / 1000);
-                printf("System CPU time: %ld.%03ld\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec / 1000);
+                printf("\nUser CPU time: %ld.%06ld\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+                printf("System CPU time: %ld.%06ld\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
                 printf("Maximum resident set size: %ld\n", usage.ru_maxrss);
                 printf("Page reclaims: %ld\n", usage.ru_minflt);
                 printf("Page faults: %ld\n", usage.ru_majflt);
