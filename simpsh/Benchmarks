@@ -1,0 +1,143 @@
+BENCHMARKS
+
+Benchmark 1:
+
+	./simpsh --profile --rdonly a --pipe --pipe --wronly b --wronly c --command 0 1 6 head -c25000000 /dev/urandom --command 2 3 6 base64 --command 4 5 6 sort --wait
+
+	time (head -c25000000 /dev/urandom | base64 | sort > b) 2>> c
+
+	simpsh:
+		8.829748 usr, 11.428232 system
+		8.794734 usr, 11.473198 system
+		9.248666 usr, 11.599399 system
+		9.261591 usr, 11.738352 system
+		8.696417 usr, 11.524394 system
+
+	Avg: 8.9662312 usr, 11.552715 system
+
+	bash:
+		8.722 usr, 11.195 system
+		8.705 usr, 11.494 system
+		8.659 usr, 11.561 system
+		8.711 usr, 11.526 system
+		8.616 usr, 11.618 system
+
+	Avg: 8.6826 usr, 11.4788 system
+
+	execline:
+		8.35 usr, 0.5 system
+		8.34 usr, 0.53 system
+		8.22 usr, 0.53 system
+		8.43 usr, 0.52 system
+		8.44 usr, 0.55 system
+
+	Avg: 8.356 usr, 0.526 system
+
+Benchmark 2:
+
+	//note that file a is ~14 mb and file b is ~140 mb
+
+	./simpsh --profile --rdonly a --pipe --pipe --creat --trunc --wronly c --creat --append --wronly d --command 3 5 6 tr A-Z a-z --command 0 2 6 sort --command 1 4 6 cat b - --wait
+
+	time (sort < a | cat b - | tr A-Z a-z > c) 2>> d
+
+	simpsh:
+		0.760380 usr, 0.302353 system
+		0.751087 usr, 0.304451 system
+		0.777835 usr, 0.271534 system
+		0.741417 usr, 0.311582 system
+		0.760867 usr, 0.303450 system
+
+	Avg: 0.7581172 usr, 0.298674 system
+
+	bash:
+		0.799 usr, 0.304 system
+		0.839 usr, 0.327 system
+		0.814 usr, 0.309 system
+		0.810 usr, 0.311 system
+		0.806 usr, 0.320 system
+
+	Avg: 0.8136 usr, 0.3142 system
+
+	execline:
+		0.14 usr, 0.18 system
+		0.13 usr, 0.19 system
+		0.14 usr, 0.18 system
+		0.14 usr, 0.18 system
+		0.15 usr, 0.16 system
+
+	Avg: 0.14 usr, 0.178 system
+
+Benchmark 3:
+
+	//note file a is ~140 mb
+
+	./simpsh --profile --rdonly a --wronly b --wronly c --command 0 1 2 ./sfrobu --wait
+
+	time ./sfrobu > b 2>> c
+
+	simpsh:
+		0.825960 usr, 0.160797 system
+		0.832102 usr, 0.150282 system
+		0.828630 usr, 0.151664 system
+		0.830857 usr, 0.145852 system
+		0.823377 usr, 0.157498 system
+
+	Avg: 0.8281852 usr, 0.1532186 system
+
+	bash:
+		0.887 usr, 0.182 system
+		0.826 usr, 0.182 system
+		0.838 usr, 0.181 system
+		0.828 usr, 0.184 system
+		0.832 usr, 0.175 system
+
+	Avg: 0.8422 usr, 0.1808 system
+
+	execline:
+		0.82 usr, 0.16 system
+		0.83 usr, 0.18 system
+		0.83 usr, 0.16 system
+		0.82 usr, 0.17 system
+		0.83 usr, 0.16 system
+
+	Avg: 0.826 usr, 0.166 system
+
+
+
+
+
+
+
+
+
+
+
+
+
+	simpsh:
+		 usr,  system
+		 usr,  system
+		 usr,  system
+		 usr,  system
+		 usr,  system
+
+	Avg: usr,  system
+
+	bash:
+		 usr,  system
+		 usr,  system
+		 usr,  system
+		 usr,  system
+		 usr,  system
+
+	Avg: usr,  system
+
+	execline:
+		 usr,  system
+		 usr,  system
+		 usr,  system
+		 usr,  system
+		 usr,  system
+
+	Avg: usr,  system
