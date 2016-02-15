@@ -1,9 +1,9 @@
 Cameron Ito 504427256
 Eugene Liu 204489665
 
-Implemented up to Lab 1b spec
+Implemented up to Lab 1c spec
 http://web.cs.ucla.edu/classes/winter16/cs111/assign/lab1.html
 
 * All pipes close when the --wait option is called, so the user does not have to manually close them
 to prevent hanging
-* --profile not yet implemented
+* --profile prints out after every option even though the most crucial data is found in --wait
