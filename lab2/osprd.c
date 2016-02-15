@@ -14,6 +14,8 @@
 #include <linux/wait.h>
 #include <linux/file.h>
 
+#include <linux/list.h> /* linked list implementation */
+
 #include "spinlock.h"
 #include "osprd.h"
 
@@ -34,7 +36,7 @@
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("CS 111 RAM Disk");
 // EXERCISE: Pass your names into the kernel as the module's authors.
-MODULE_AUTHOR("Skeletor");
+MODULE_AUTHOR("Cameron Ito and Eugene Liu");
 
 #define OSPRD_MAJOR	222
 
@@ -64,6 +66,14 @@ typedef struct osprd_info {
 
 	/* HINT: You may want to add additional fields to help
 	         in detecting deadlock. */
+	
+	//list node pointers - get the actual data of the node using list_entry(),
+	//which finds the lock_pid struct containing the list_head
+	struct list_head read_locking_pids;
+	struct list_head write_locking_pids;
+	
+	unsigned read_lock_size;
+	unsigned write_lock_size;
 
 	// The following elements are used internally; you don't need
 	// to understand them.
@@ -72,6 +82,16 @@ typedef struct osprd_info {
 	                                //   exclusion in the 'queue'.
 	struct gendisk *gd;             // The generic disk.
 } osprd_info_t;
+
+typedef struct lock_pid {
+	struct list_head list;          //linked list of pids
+	pid_t pid;                      //pid of the current node
+} lock_pids;
+
+typedef struct ticket {
+	struct list_head list;
+	unsigned ticket_num;
+} ticket;
 
 #define NOSPRD 4
 static osprd_info_t osprds[NOSPRD];
@@ -131,6 +151,7 @@ static void osprd_process_request(osprd_info_t *d, struct request *req)
 	if (request_type == READ) {
 		memcpy((void *) req->buffer, (void *) data_ptr, req->current_nr_sectors * SECTOR_SIZE);
 	} else if (request_type == WRITE) {
+		memcpy((void *) data_ptr, (void *) req->buffer, req->current_nr_sectors * SECTOR_SIZE);
 	}
 	
 	end_request(req, 1);
@@ -232,8 +253,43 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 		// be protected by a spinlock; which ones?)
 
 		// Your code here (instead of the next two lines).
+		/*
 		eprintk("Attempting to acquire\n");
-		r = -ENOTTY;
+		r = -ENOTTY;*/
+		
+		//acquire
+		unsigned my_ticket;
+
+		//TODO deadlock detection
+		osp_spin_lock(&(d->mutex));
+		my_ticket = d->ticket_head;
+		d->ticket_head++;
+		osp_spin_unlock(&(d->mutex));
+
+		if (filp_writable) { //write lock
+			if (wait_event_interruptible(d->blockq, d->ticket_tail == my_ticket
+			&& d->write_lock_size == 0
+			&& d->read_lock_size == 0)) {
+			
+				if (d->ticket_tail == my_ticket) {
+					d->ticket_tail = return_valid_ticket(d->invalid_tickets, d->ticket_tail + 1);
+					wake_up_all(&(d->blockq));
+				} else { //d->ticket_tail != my_ticket
+					add_to_ticket_list(d->invalid_tickets, my_ticket);
+				}
+				return -ERESTARTSYS;
+			}
+			
+			//wait_event_interruptible() returns 0
+			filp->f_flags |= F_OSPRD_LOCKED;
+			add_to_pid_list(d->write_locking_pids, current->pid);
+			d->ticket_tail = return_valid_ticket(d->invalid_tickets, d->ticket_tail + 1);
+			return 0;
+			
+		} else { //read lock
+
+			
+		}
 
 	} else if (cmd == OSPRDIOCTRYACQUIRE) {
 
@@ -275,6 +331,13 @@ static void osprd_setup(osprd_info_t *d)
 	osp_spin_lock_init(&d->mutex);
 	d->ticket_head = d->ticket_tail = 0;
 	/* Add code here if you add fields to osprd_info_t. */
+	
+	read_lock_size = 0;
+	write_lock_size = 0;
+	
+	//initialize empty circular lists
+	INIT_LIST_HEAD(&(d->read_locking_pids));
+	INIT_LIST_HEAD(&(d->write_locking_pids));
 }
 
 
