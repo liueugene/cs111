@@ -104,6 +104,7 @@ static osprd_info_t osprds[NOSPRD];
 static void add_to_pid_list(struct list_head *pid_list_head, pid_t pid)
 {
 	lock_pid_node *node = kzalloc(sizeof(lock_pid_node), GFP_KERNEL);
+	node->pid = pid;
 	INIT_LIST_HEAD(&node->list);
 	
 	list_add_tail(&node->list, pid_list_head);
@@ -117,6 +118,7 @@ static void remove_from_pid_list(struct list_head *pid_list_head, pid_t pid)
 		lock_pid_node *node = list_entry(ptr, struct lock_pid_node, list);
 		if (node->pid == pid) {
 			list_del(ptr);
+			kfree(node);
 			break;
 		}
 		ptr = ptr->next;
@@ -127,6 +129,7 @@ static void remove_from_pid_list(struct list_head *pid_list_head, pid_t pid)
 static void add_to_ticket_list(struct list_head *ticket_list_head, unsigned ticket)
 {
 	ticket_node *node = kzalloc(sizeof(ticket_node), GFP_KERNEL);
+	node->ticket = ticket;
 	INIT_LIST_HEAD(&node->list);
 	
 	list_add_tail(&node->list, ticket_list_head);
@@ -148,6 +151,20 @@ static unsigned return_valid_ticket(struct list_head *ticket_list_head, unsigned
 	}
 	
 	return ticket;
+}
+
+static int is_deadlock(struct list_head *pid_list_head, pid_t pid)
+{
+	struct list_head *ptr = pid_list_head->next;
+	while (ptr != pid_list_head) {
+		lock_pid_node *node = list_entry(ptr, struct lock_pid_node, list);
+		if (node->pid == pid) {
+			return 1;
+		}
+		ptr = ptr->next;
+	}
+	
+	return 0;
 }
 
 /*
@@ -327,37 +344,42 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 		unsigned my_ticket;
 
 		//TODO deadlock detection
+		if (is_deadlock(&d->write_locking_pids, current->pid) || is_deadlock(&d->read_locking_pids, current->pid))
+			return -EDEADLK;
+		
+		
 		osp_spin_lock(&(d->mutex));
 		my_ticket = d->ticket_head;
 		d->ticket_head++;
 		osp_spin_unlock(&(d->mutex));
 
-		if (filp_writable) { //write lock
-			if (wait_event_interruptible(d->blockq, d->ticket_tail == my_ticket
-			&& d->write_lock_size == 0
-			&& d->read_lock_size == 0)) {
-				
-				//interrupted by signal
-				if (d->ticket_tail == my_ticket) {
-					d->ticket_tail = return_valid_ticket(&d->invalid_tickets, d->ticket_tail + 1);
-					wake_up_all(&(d->blockq));
-				} else { //d->ticket_tail != my_ticket
-					add_to_ticket_list(&d->invalid_tickets, my_ticket);
-				}
-				return -ERESTARTSYS;
-			}
+		if (wait_event_interruptible(d->blockq, d->ticket_tail == my_ticket
+		&& d->write_lock_size == 0
+		&& d->read_lock_size == 0)) {
 			
-			//wait_event_interruptible() returns 0
-			filp->f_flags |= F_OSPRD_LOCKED;
+			//interrupted by signal
+			if (d->ticket_tail == my_ticket) {
+				d->ticket_tail = return_valid_ticket(&d->invalid_tickets, d->ticket_tail + 1);
+				wake_up_all(&(d->blockq));
+			} else { //d->ticket_tail != my_ticket
+				add_to_ticket_list(&d->invalid_tickets, my_ticket);
+			}
+			return -ERESTARTSYS;
+		}
+		
+		//wait_event_interruptible() returns 0
+		filp->f_flags |= F_OSPRD_LOCKED;
+		
+		if (filp_writable) { //write lock
 			add_to_pid_list(&d->write_locking_pids, current->pid);
 			d->write_lock_size++;
-			d->ticket_tail = return_valid_ticket(&d->invalid_tickets, d->ticket_tail + 1);
-			return 0;
-			
 		} else { //read lock
-
-			
+			add_to_pid_list(&d->read_locking_pids, current->pid);
+			d->read_lock_size++;
 		}
+		
+		d->ticket_tail = return_valid_ticket(&d->invalid_tickets, d->ticket_tail + 1);
+		return 0;
 
 	} else if (cmd == OSPRDIOCTRYACQUIRE) {
 
@@ -369,8 +391,32 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 		// Otherwise, if we can grant the lock request, return 0.
 
 		// Your code here (instead of the next two lines).
+		/*
 		eprintk("Attempting to try acquire\n");
 		r = -ENOTTY;
+		*/
+		
+		if (d->write_lock_size > 0 || d->read_lock_size > 0)
+			return -EBUSY;
+		
+		osp_spin_lock(&d->mutex);
+		
+		filp->f_flags |= F_OSPRD_LOCKED;
+		
+		if (filp_writable) { //write lock
+			add_to_pid_list(&d->write_locking_pids, current->pid);
+			d->write_lock_size++;
+		} else { //read lock
+			add_to_pid_list(&d->read_locking_pids, current->pid);
+			d->read_lock_size++;
+		}
+		
+		d->ticket_head++;
+		d->ticket_tail = return_valid_ticket(&d->invalid_tickets, d->ticket_tail + 1);
+		
+		osp_spin_unlock(&d->mutex);
+		
+		return 0;
 
 	} else if (cmd == OSPRDIOCRELEASE) {
 
@@ -382,7 +428,26 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 		// you need, and return 0.
 
 		// Your code here (instead of the next line).
-		r = -ENOTTY;
+		// r = -ENOTTY;
+		
+		if (!(filp->f_flags & F_OSPRD_LOCKED)) { //if not locked
+			return -EINVAL;
+		}
+		
+		osp_spin_lock(&d->mutex);
+		
+		if (filp_writable) {
+			remove_from_pid_list(&d->write_locking_pids, current->pid);
+		} else {
+			remove_from_pid_list(&d->read_locking_pids, current->pid);
+		}
+		
+		filp->f_flags ^= F_OSPRD_LOCKED;
+		
+		osp_spin_unlock(&d->mutex);
+		wake_up_all(&d->blockq);
+		
+		return 0;		
 
 	} else
 		r = -ENOTTY; /* unknown command */
