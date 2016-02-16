@@ -35,7 +35,7 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("CS 111 RAM Disk");
-// EXERCISE: Pass your names into the kernel as the module's authors.
+// EXERCISE: DONE Pass your names into the kernel as the module's authors.
 MODULE_AUTHOR("Cameron Ito and Eugene Liu");
 
 #define OSPRD_MAJOR	222
@@ -110,6 +110,19 @@ static void add_to_pid_list(struct list_head *pid_list_head, pid_t pid)
 	
 }
 
+static void remove_from_pid_list(struct list_head *pid_list_head, pid_t pid)
+{
+	struct list_head *ptr = pid_list_head->next;
+	while (ptr != pid_list_head) {
+		lock_pid_node *node = list_entry(ptr, struct lock_pid_node, list);
+		if (node->pid == pid) {
+			list_del(ptr);
+			break;
+		}
+		ptr = ptr->next;
+	}
+}
+
 //adds an entry to the end of the ticket list
 static void add_to_ticket_list(struct list_head *ticket_list_head, unsigned ticket)
 {
@@ -125,7 +138,7 @@ static unsigned return_valid_ticket(struct list_head *ticket_list_head, unsigned
 	
 	struct list_head *ptr = ticket_list_head->next;
 	while (ptr != ticket_list_head) {
-		ticket_node *node = list_entry(ptr, ticket_node, list);
+		ticket_node *node = list_entry(ptr, struct ticket_node, list);
 		if (node->ticket == ticket) {
 			ticket++;
 			ptr = ticket_list_head->next;
@@ -172,7 +185,7 @@ static void osprd_process_request(osprd_info_t *d, struct request *req)
 		return;
 	}
 
-	// EXERCISE: Perform the read or write request by copying data between
+	// EXERCISE: DONE??? Perform the read or write request by copying data between
 	// our data array and the request's buffer.
 	// Hint: The 'struct request' argument tells you what kind of request
 	// this is, and which sectors are being read or written.
@@ -216,7 +229,7 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 		osprd_info_t *d = file2osprd(filp);
 		int filp_writable = filp->f_mode & FMODE_WRITE;
 
-		// EXERCISE: If the user closes a ramdisk file that holds
+		// EXERCISE: DONE If the user closes a ramdisk file that holds
 		// a lock, release the lock.  Also wake up blocked processes
 		// as appropriate.
 
@@ -224,6 +237,21 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 
 		// This line avoids compiler warnings; you may remove it.
 		(void) filp_writable, (void) d;
+		
+		osp_spin_lock(&d->mutex);
+		if (filp->f_flags & F_OSPRD_LOCKED) {
+		
+			filp->f_flags ^= F_OSPRD_LOCKED; //unlock file
+			if (filp_writable) {
+				remove_from_pid_list(&d->write_locking_pids, current->pid);
+				d->write_lock_size--;
+			} else {
+				remove_from_pid_list(&d->read_locking_pids, current->pid);
+				d->read_lock_size--;
+			}
+		}
+		osp_spin_unlock(&d->mutex);
+		wake_up_all(&d->blockq);
 
 	}
 
@@ -378,6 +406,7 @@ static void osprd_setup(osprd_info_t *d)
 	//initialize empty circular lists
 	INIT_LIST_HEAD(&(d->read_locking_pids));
 	INIT_LIST_HEAD(&(d->write_locking_pids));
+	INIT_LIST_HEAD(&(d->invalid_tickets));
 }
 
 
