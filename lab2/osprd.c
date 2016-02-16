@@ -71,6 +71,7 @@ typedef struct osprd_info {
 	//which finds the lock_pid struct containing the list_head
 	struct list_head read_locking_pids;
 	struct list_head write_locking_pids;
+	struct list_head invalid_tickets;
 	
 	unsigned read_lock_size;
 	unsigned write_lock_size;
@@ -83,15 +84,15 @@ typedef struct osprd_info {
 	struct gendisk *gd;             // The generic disk.
 } osprd_info_t;
 
-typedef struct lock_pid {
+typedef struct lock_pid_node {
 	struct list_head list;          //linked list of pids
 	pid_t pid;                      //pid of the current node
-} lock_pids;
+} lock_pid_node;
 
-typedef struct ticket {
+typedef struct ticket_node {
 	struct list_head list;
-	unsigned ticket_num;
-} ticket;
+	unsigned ticket;
+} ticket_node;
 
 #define NOSPRD 4
 static osprd_info_t osprds[NOSPRD];
@@ -99,7 +100,37 @@ static osprd_info_t osprds[NOSPRD];
 
 // Declare useful helper functions
 
+//adds an entry to the end of the pid linked list
+static void add_to_pid_list(list_head *pid_list_head, pid_t pid)
+{
+	lock_pid_node *node = kzalloc(sizeof(lock_pid_node), GFP_KERNEL);
+	INIT_LIST_HEAD(&node->list);
+	
+	list_add_tail(&node->list, pid_list_head);
+}
+
+//adds an entry to the end of the ticket list
+static void add_to_ticket_list(list_head *ticket_list_head, unsigned ticket)
+{
+	ticket_node *node = kzalloc(sizeof(ticket_node), GFP_KERNEL);
+	INIT_LIST_HEAD(&node->list);
+	
+	list_add_tail(&node->list, ticket_list_head);
+}
+
+static unsigned return_valid_ticket(list_head *ticket_list_head, unsigned ticket)
+{
+	//d->ticket_tail = return_valid_ticket(d->invalid_tickets, d->ticket_tail + 1);
+	
+	for (
+}
+
 /*
+ *   the open file, and 'user_data' is copied from for_each_open_file's third
+ *   argument.
+ */
+static void for_each_open_file(struct task_struct *task,
+			       void (*callback)(struct file *filp,
  * file2osprd(filp)
  *   Given an open file, check whether that file corresponds to an OSP ramdisk.
  *   If so, return a pointer to the ramdisk's osprd_info_t.
@@ -111,11 +142,6 @@ static osprd_info_t *file2osprd(struct file *filp);
  * for_each_open_file(task, callback, user_data)
  *   Given a task, call the function 'callback' once for each of 'task's open
  *   files.  'callback' is called as 'callback(filp, user_data)'; 'filp' is
- *   the open file, and 'user_data' is copied from for_each_open_file's third
- *   argument.
- */
-static void for_each_open_file(struct task_struct *task,
-			       void (*callback)(struct file *filp,
 						osprd_info_t *user_data),
 			       osprd_info_t *user_data);
 

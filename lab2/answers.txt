@@ -14,9 +14,9 @@ Student ID: 204489665
 Email: eugeneliu96@gmail.com
 
 # Partner 2
-#Name: Partner's Name Here
-#Student ID: Partner's ID Here
-#Email: Partner's Email Here
+Name: Cameron Ito
+Student ID: 504427256
+Email: CameronIto@gmail.com
 
 
 # Add any other information you'd like us to have below this line.
