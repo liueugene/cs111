@@ -126,11 +126,6 @@ static unsigned return_valid_ticket(list_head *ticket_list_head, unsigned ticket
 }
 
 /*
- *   the open file, and 'user_data' is copied from for_each_open_file's third
- *   argument.
- */
-static void for_each_open_file(struct task_struct *task,
-			       void (*callback)(struct file *filp,
  * file2osprd(filp)
  *   Given an open file, check whether that file corresponds to an OSP ramdisk.
  *   If so, return a pointer to the ramdisk's osprd_info_t.
@@ -142,9 +137,13 @@ static osprd_info_t *file2osprd(struct file *filp);
  * for_each_open_file(task, callback, user_data)
  *   Given a task, call the function 'callback' once for each of 'task's open
  *   files.  'callback' is called as 'callback(filp, user_data)'; 'filp' is
+ *   the open file, and 'user_data' is copied from for_each_open_file's third
+ *   argument.
+ */
+static void for_each_open_file(struct task_struct *task,
+			       void (*callback)(struct file *filp,
 						osprd_info_t *user_data),
 			       osprd_info_t *user_data);
-
 
 /*
  * osprd_process_request(d, req)
