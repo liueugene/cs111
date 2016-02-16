@@ -67,14 +67,14 @@ typedef struct osprd_info {
 	/* HINT: You may want to add additional fields to help
 	         in detecting deadlock. */
 	
+	unsigned read_lock_size;
+	unsigned write_lock_size;
+	
 	//list node pointers - get the actual data of the node using list_entry(),
 	//which finds the lock_pid struct containing the list_head
 	struct list_head read_locking_pids;
 	struct list_head write_locking_pids;
 	struct list_head invalid_tickets;
-	
-	unsigned read_lock_size;
-	unsigned write_lock_size;
 
 	// The following elements are used internally; you don't need
 	// to understand them.
@@ -101,16 +101,17 @@ static osprd_info_t osprds[NOSPRD];
 // Declare useful helper functions
 
 //adds an entry to the end of the pid linked list
-static void add_to_pid_list(list_head *pid_list_head, pid_t pid)
+static void add_to_pid_list(struct list_head *pid_list_head, pid_t pid)
 {
 	lock_pid_node *node = kzalloc(sizeof(lock_pid_node), GFP_KERNEL);
 	INIT_LIST_HEAD(&node->list);
 	
 	list_add_tail(&node->list, pid_list_head);
+	
 }
 
 //adds an entry to the end of the ticket list
-static void add_to_ticket_list(list_head *ticket_list_head, unsigned ticket)
+static void add_to_ticket_list(struct list_head *ticket_list_head, unsigned ticket)
 {
 	ticket_node *node = kzalloc(sizeof(ticket_node), GFP_KERNEL);
 	INIT_LIST_HEAD(&node->list);
@@ -118,11 +119,22 @@ static void add_to_ticket_list(list_head *ticket_list_head, unsigned ticket)
 	list_add_tail(&node->list, ticket_list_head);
 }
 
-static unsigned return_valid_ticket(list_head *ticket_list_head, unsigned ticket)
+static unsigned return_valid_ticket(struct list_head *ticket_list_head, unsigned ticket)
 {
 	//d->ticket_tail = return_valid_ticket(d->invalid_tickets, d->ticket_tail + 1);
 	
-	for (
+	struct list_head *ptr = ticket_list_head->next;
+	while (ptr != ticket_list_head) {
+		ticket_node *node = list_entry(ptr, ticket_node, list);
+		if (node->ticket == ticket) {
+			ticket++;
+			ptr = ticket_list_head->next;
+		} else {
+			ptr = ptr->next;
+		}
+	}
+	
+	return ticket;
 }
 
 /*
@@ -152,6 +164,9 @@ static void for_each_open_file(struct task_struct *task,
  */
 static void osprd_process_request(osprd_info_t *d, struct request *req)
 {
+	unsigned request_type;
+	uint8_t *data_ptr;
+	
 	if (!blk_fs_request(req)) {
 		end_request(req, 0);
 		return;
@@ -166,9 +181,7 @@ static void osprd_process_request(osprd_info_t *d, struct request *req)
 	// 'req->buffer' members, and the rq_data_dir() function.
 
 	// Your code here.
-	//eprintk("Should process request...\n");	
-	unsigned request_type;
-	uint8_t *data_ptr;
+	//eprintk("Should process request...\n");
 	
 	request_type = rq_data_dir(req);
 	data_ptr = d->data + req->sector * SECTOR_SIZE;
@@ -295,20 +308,22 @@ int osprd_ioctl(struct inode *inode, struct file *filp,
 			if (wait_event_interruptible(d->blockq, d->ticket_tail == my_ticket
 			&& d->write_lock_size == 0
 			&& d->read_lock_size == 0)) {
-			
+				
+				//interrupted by signal
 				if (d->ticket_tail == my_ticket) {
-					d->ticket_tail = return_valid_ticket(d->invalid_tickets, d->ticket_tail + 1);
+					d->ticket_tail = return_valid_ticket(&d->invalid_tickets, d->ticket_tail + 1);
 					wake_up_all(&(d->blockq));
 				} else { //d->ticket_tail != my_ticket
-					add_to_ticket_list(d->invalid_tickets, my_ticket);
+					add_to_ticket_list(&d->invalid_tickets, my_ticket);
 				}
 				return -ERESTARTSYS;
 			}
 			
 			//wait_event_interruptible() returns 0
 			filp->f_flags |= F_OSPRD_LOCKED;
-			add_to_pid_list(d->write_locking_pids, current->pid);
-			d->ticket_tail = return_valid_ticket(d->invalid_tickets, d->ticket_tail + 1);
+			add_to_pid_list(&d->write_locking_pids, current->pid);
+			d->write_lock_size++;
+			d->ticket_tail = return_valid_ticket(&d->invalid_tickets, d->ticket_tail + 1);
 			return 0;
 			
 		} else { //read lock
@@ -357,8 +372,8 @@ static void osprd_setup(osprd_info_t *d)
 	d->ticket_head = d->ticket_tail = 0;
 	/* Add code here if you add fields to osprd_info_t. */
 	
-	read_lock_size = 0;
-	write_lock_size = 0;
+	d->read_lock_size = 0;
+	d->write_lock_size = 0;
 	
 	//initialize empty circular lists
 	INIT_LIST_HEAD(&(d->read_locking_pids));
