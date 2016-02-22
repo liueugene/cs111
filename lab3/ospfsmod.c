@@ -482,7 +482,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		if (od->od_ino) { //check if it is not zero
 			entry_oi = ospfs_inode(od->od_ino);
 			if (entry_oi->oi_ftype == OSPFS_FTYPE_REG) { //regular file
-				ok_so_far = fill_dir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, DT_REG);
+				ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, DT_REG);
 			} else if (entry_oi->oi_ftype == OSPFS_FTYPE_DIR) { //directory
 				//TODO
 			} else {
@@ -731,12 +731,12 @@ add_block(ospfs_inode_t *oi)
 		return -ENOSPC;
 	}
 	
-	if (n > OSPFS_NDIRECT + OSPFD_NINDIRECT) {
+	if (n > OSPFS_NDIRECT + OSPFS_NINDIRECT) {
 		//TODO may need to allocate a new indirect block
-	} else if (n == OSPFS_NDIRECT + OSPFD_NINDIRECT) {
+	} else if (n == OSPFS_NDIRECT + OSPFS_NINDIRECT) {
 		//TODO allocate a new indirect^2 block and a new indirect block
-	} else if (n >= OSPFS_INDIRECT) {
-		if (n == OSPFS_INDIRECT) {
+	} else if (n >= OSPFS_NINDIRECT) {
+		if (n == OSPFS_NINDIRECT) {
 			//TODO allocate a new indirect block
 		}
 	} else { //n < OSPFS_INDIRECT
@@ -942,6 +942,9 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 		amount += n;
 		*f_pos += n;
 	}
+	
+	done:
+	return (retval >= 0 ? amount : retval);
 }
 
 
@@ -1149,7 +1152,7 @@ ospfs_create(struct inode *dir, struct dentry *dentry, int mode, struct nameidat
 	uint32_t entry_ino = 0;
 	/* EXERCISE: Your code here. */
 	ospfs_inode_t *file_oi = NULL;
-	ospfs_directory_t *new_entry = NULL;
+	ospfs_direntry_t *new_entry = NULL;
 	uint32_t index_off;
 	
 	if (dentry->d_name.len > OSPFS_MAXNAMELEN) {
@@ -1180,7 +1183,7 @@ ospfs_create(struct inode *dir, struct dentry *dentry, int mode, struct nameidat
 	file_oi->oi_nlink = 1;
 	file_oi->oi_mode = mode;
 	
-	for (index_off = 0; index_off < OSPFS_NDIRECT, ++index_off) {
+	for (index_off = 0; index_off < OSPFS_NDIRECT; ++index_off) {
 		file_oi->oi_direct[index_off] = 0;
 	}
 	file_oi->oi_indirect = 0;
