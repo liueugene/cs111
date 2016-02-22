@@ -11,14 +11,14 @@
 # information you'd like us to know, please add it at the end of the file.
 
 # Partner 1
-Name: 
-Student ID: 
-Email: 
+Name: Eugene Liu
+Student ID: 204 489 665
+Email: eugeneliu96@gmail.com
 
 # Partner 2 (if you're working in a team)
-Name: 
-Student ID: 
-Email: 
+Name: Cameron Ito
+Student ID: 504 427 256
+Email: CameronIto@gmail.com
 
 # Extra credit problems
 #Extra credit problem: none
