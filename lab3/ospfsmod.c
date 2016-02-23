@@ -480,7 +480,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
 		/* EXERCISE: Your code here */
 		/* Hopefully finished -C */
-		os = ospfs_inode_data(dir_oi, f_pos - 2);
+		od = ospfs_inode_data(dir_oi, f_pos - 2);
 		if (od->od_ino) { //check if it is not zero
 			entry_oi = ospfs_inode(od->od_ino);
 			if (entry_oi->oi_ftype == OSPFS_FTYPE_REG) { //regular file
@@ -505,7 +505,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		return r;
 	} else if (ok_so_far < 0) { //filldir returned < 0
 		return 0;
-	} else if { //error
+	} else { //error
 		return -r;
 	}
 	//return r;
@@ -619,6 +619,15 @@ free_block(uint32_t blockno)
 	bitvector_set(bitmap, blockno % OSPFS_BLKBITSIZE);
 }
 
+static void
+zero_out_block(uint32_t blockno)
+{
+	int i;
+	uint32_t *block_ptr = ospfs_block(blockno);
+	for (i = 0; i < OSPFS_BLKSIZE; i++) {
+		block_ptr[i] = 0;
+	}
+}
 
 /*****************************************************************************
  * FILE OPERATIONS
@@ -739,11 +748,11 @@ add_block(ospfs_inode_t *oi)
 	uint32_t new_block = 0;
 	uint32_t *block_ptr = NULL;
 	
+	void *free_block_bitmap = ospfs_block(OSPFS_FREEMAP_BLK);
+	
 	if (n == OSPFS_MAXFILEBLKS) {
 		//TODO
 	}
-	
-	void *free_block_bitmap = ospfs_block(OSPFS_FREEMAP_BLK);
 	
 	new_block = allocate_block();
 	if (new_block) {
@@ -765,16 +774,6 @@ add_block(ospfs_inode_t *oi)
 	}
 	
 	return -EIO; // Replace this line
-}
-
-static void
-zero_out_block(uint32_t blockno)
-{
-	int i;
-	uint32_t *block_ptr = ospfs_block(blockno);
-	for (i = 0; i < OSPFS_BLKSIZE; i++) {
-		block_ptr[i] = 0;
-	}
 }
 
 // remove_block(ospfs_inode_t *oi)
