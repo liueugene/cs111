@@ -616,6 +616,9 @@ free_block(uint32_t blockno)
 {
 	/* EXERCISE: Your code here */
 	/* Hopefully finished */
+	if (blockno < 3)
+		return;
+	
 	void *bitmap = ospfs_block(OSPFS_FREEMAP_BLK + blockno / OSPFS_BLKBITSIZE);
 	bitvector_set(bitmap, blockno % OSPFS_BLKBITSIZE);
 }
@@ -759,12 +762,12 @@ add_block(ospfs_inode_t *oi)
 	//allocated[1] = doubly indirect
 
 	/* EXERCISE: Your code here */
-	uint32_t new_allocated_indirect = 0; //may not be necessary, TA defined variables
-	uint32_t new_allocated_indrect2 = 0; //could use allocated array defined above
 	uint32_t new_block = 0;
-	uint32_t *block_ptr = NULL;
 	
 	void *free_block_bitmap;
+	void *indirect, *indirect2;
+	int32_t index, index2;
+	
 	
 	if (n == OSPFS_MAXFILEBLKS) {
 		return -ENOSPC;
@@ -780,9 +783,9 @@ add_block(ospfs_inode_t *oi)
 	}
 	
 	if (n > OSPFS_NDIRECT + OSPFS_NINDIRECT) {
-		//TODO need to allocate a new indirect block
+		//need to allocate a new indirect block
 		if (n == OSPFS_NDIRECT + OSPFS_NINDIRECT) {
-			//TODO allocate a new indirect^2 block
+			//allocate a new indirect^2 block
 			allocated[1] = allocate_block();
 			if (!allocated[1]) {
 				free_block(new_block);
@@ -792,22 +795,28 @@ add_block(ospfs_inode_t *oi)
 			oi->oi_indirect2 = allocated[1];
 		}
 		
-		allocated[0] = allocate_block();
+		indirect2 = ospfs_block(oi->oi_indirect2);
+		index2 = indir_index(n);
 		
-		if (!allocated[0]) {
-			free_block(new_block);
-			free_block(allocated[1]);
-			return -ENOSPC;
+		if ((n - OSPFS_NDIRECT) % (OSPFS_BLKSIZE / 4) == 0) {
+			allocated[0] = allocate_block();
+			
+			if (!allocated[0]) {
+				free_block(new_block);
+				free_block(allocated[1]);
+				return -ENOSPC;
+			}
+			zero_out_block(allocated[0]);
+			indirect2[index2] = allocated[0];
 		}
 		
-		void *indirect2 = ospfs_block(oi->oi_indirect2);
-		uint32_t index = n - OSPFS_NDIRECT - OSPFS_NINDIRECT;
-		
-		indirect2[index] = new_block();
+		indirect = ospfs_block(indirect2[index2]);
+		index = direct_index(n);
+		indirect[index] = new_block;
 		
 	} else if (n >= OSPFS_NDIRECT) {
 		if (n == OSPFS_NDIRECT) {
-			//TODO allocate a new indirect block
+			//allocate a new indirect block
 			allocated[0] = allocate_block();
 			if (!allocated[0]) { //failed to allocate
 				free_block(new_block);
@@ -817,14 +826,16 @@ add_block(ospfs_inode_t *oi)
 			oi->oi_indirect = allocated[0];
 		}
 		
-		void *indirect = ospfs_block(oi->oi_indirect);
-		indirect[n - OSPFS_NDIRECT - 1] = new_block;
+		indirect = ospfs_block(oi->oi_indirect);
+		index = direct_index(n);
+		indirect[index] = new_block;
 		
 	} else { //n < OSPFS_NDIRECT
 		oi->oi_direct[n] = new_block;
 	}
 	
-	return -EIO; // Replace this line
+	oi->oi_size += OSPFS_BLKSIZE;
+	return 0;
 }
 
 // remove_block(ospfs_inode_t *oi)
