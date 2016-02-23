@@ -581,10 +581,15 @@ static uint32_t
 allocate_block(void)
 {
 	/* EXERCISE: Your code here */
-	void *bitmap = ospfs_blok(OSPFS_FREEMAP_BLK);
+	void *bitmap = ospfs_block(OSPFS_FREEMAP_BLK);
+	int count = 1;
 	int i = 2;
 	for (; i < ospfs_super->os_nblocks; i++) {
-		if (bitvector_test(bitmap, i)) {
+		if (i % OSPFS_BLKBITSIZE == 0) {
+			bitmap = ospfs_block(OSPFS_FREEMAP_BLK + count);
+			count++;
+		}
+		if (bitvector_test(bitmap, i % OSPFS_BLKBITSIZE)) {
 			return i;
 		}
 	}
