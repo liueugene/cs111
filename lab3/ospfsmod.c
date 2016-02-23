@@ -480,7 +480,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
 		/* EXERCISE: Your code here */
 		/* Hopefully finished -C */
-		os = ospfs_inode_data(dir_oi, f_pos - 2);
+		od = ospfs_inode_data(dir_oi, f_pos - 2);
 		if (od->od_ino) { //check if it is not zero
 			entry_oi = ospfs_inode(od->od_ino);
 			if (entry_oi->oi_ftype == OSPFS_FTYPE_REG) { //regular file
@@ -592,6 +592,7 @@ allocate_block(void)
 			count++;
 		}
 		if (bitvector_test(bitmap, i % OSPFS_BLKBITSIZE)) {
+			bitvector_clear(bitmap, i % OSPFS_BLKBITSIZE);
 			return i;
 		}
 	}
