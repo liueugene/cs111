@@ -592,6 +592,7 @@ allocate_block(void)
 			count++;
 		}
 		if (bitvector_test(bitmap, i % OSPFS_BLKBITSIZE)) {
+			bitvector_clear(bitmap, i % OSPFS_BLKBITSIZE);
 			return i;
 		}
 	}
@@ -624,7 +625,7 @@ zero_out_block(uint32_t blockno)
 {
 	int i;
 	uint32_t *block_ptr = ospfs_block(blockno);
-	for (i = 0; i < OSPFS_BLKSIZE; i++) {
+	for (i = 0; i < (OSPFS_BLKSIZE / 4); i++) {
 		block_ptr[i] = 0;
 	}
 }
