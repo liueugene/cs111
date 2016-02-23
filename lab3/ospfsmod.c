@@ -1318,6 +1318,21 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 //   3. Initialize the directory entry and inode.
 //
 //   EXERCISE: Complete this function.
+uint32_t find_free_inode() {
+	ospfs_inode_t * ptr = ospfs_block(ospfs_super->os_firstinob);
+	int count = 1;
+	int i = 2;
+	for (; i < ospfs_super->os_ninodes; i++) {
+		if ( i % 16 == 0) {
+			ptr = ospfs_block(ospfs_super->os_firstinob + count);
+			count++;
+		}
+		if (ptr[i]->oi_nlink == 0) {
+			return i;
+		}
+	}
+	return 0;
+}
 
 static int
 ospfs_create(struct inode *dir, struct dentry *dentry, int mode, struct nameidata *nd)
