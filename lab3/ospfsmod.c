@@ -452,6 +452,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 * the loop.  For now we do this all the time.
 		 *
 		 * EXERCISE: Your code here */
+		 /* Hopefully finished -C */
 		if (f_pos - 2 >= dir_oi->size) {
 			r = 1;		/* Fix me! */
 			break;		/* Fix me! */
@@ -478,15 +479,16 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 */
 
 		/* EXERCISE: Your code here */
+		/* Hopefully finished -C */
 		os = ospfs_inode_data(dir_oi, f_pos - 2);
 		if (od->od_ino) { //check if it is not zero
 			entry_oi = ospfs_inode(od->od_ino);
 			if (entry_oi->oi_ftype == OSPFS_FTYPE_REG) { //regular file
 				ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, DT_REG);
 			} else if (entry_oi->oi_ftype == OSPFS_FTYPE_DIR) { //directory
-				//TODO
-			} else {
-				//TODO
+				ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, DT_DIR);
+			} else { //symbolic link??
+				ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, DT_LNK);
 			}
 			
 			if (ok_so_far >= 0) {
@@ -499,10 +501,12 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
 	// Save the file position and return!
 	filp->f_pos = f_pos;
-	if (r == 1) {
+	if (r == 1) { //reached end of directory
 		return r;
-	} else {
+	} else if (ok_so_far < 0) { //filldir returned < 0
 		return 0;
+	} else if { //error
+		return -r;
 	}
 	//return r;
 }
