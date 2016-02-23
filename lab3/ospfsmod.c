@@ -681,6 +681,7 @@ indir2_index(uint32_t b)
 //		the doubly indirect block.
 //
 // EXERCISE: Fill in this function.
+ /* Hopefully finished */
 
 static int32_t
 indir_index(uint32_t b)
@@ -703,6 +704,7 @@ indir_index(uint32_t b)
 //	    block array.
 //
 // EXERCISE: Fill in this function.
+ /* Hopefully finished */
 
 static int32_t
 direct_index(uint32_t b)
@@ -817,7 +819,35 @@ remove_block(ospfs_inode_t *oi)
 	uint32_t n = ospfs_size2nblocks(oi->oi_size);
 
 	/* EXERCISE: Your code here */
-	return -EIO; // Replace this line
+	if (n <= 0 || n > OSPFS_MAXFILEBLKS) {
+		return -1;
+	} else if (n <= OSPFS_NDIRECT) {
+		free_block(oi->oi_direct[n - 1]);
+		oi->oi_direct[n - 1] = 0;
+	} else if (n <= OSPFS_NDIRECT + OSPFS_NINDIRECT) {
+		int *indirect = ospfs_block(oi->oi_indirect);
+		free_block(indirect[n - OSPFS_NDIRECT - 1]);
+		indirect[n - OSPFS_NDIRECT - 1] = 0;
+		if (n == OSPFS_NDIRECT + 1) {
+			free_block(oi->oi_indirect);
+			oi->oi_indirect = 0;
+		}
+	} else {
+		int *doubly-indirect = ospfs_block(oi->oi_indirect2);
+		int *indirect = ospfs_block((doubly-indirect[n - OSPFS_NINDIRECT - OSPFS_NDIRECT) / (OSPFS_BLKSIZE / 4)]);
+		free_block(indirect[(n - OSPFS_NINDIRECT - OSPFS_NDIRECT - 1) % (OSPFS_BLKSIZE / 4)]);
+		if ((n - OSPFS_NDIRECT) % (OSPFS_BLKSIZE / 4) == 1) {
+			free((doubly-indirect[n - OSPFS_NINDIRECT - OSPFS_NDIRECT) / (OSPFS_BLKSIZE / 4)]);
+			(doubly-indirect[n - OSPFS_NINDIRECT - OSPFS_NDIRECT) / (OSPFS_BLKSIZE / 4)] = 0;
+			if (n == OSPFS_NDIRECT + OSPFS_NINDIRECT + 1) {
+				free(oi->oi_indirect2);
+				oi->oi_indirect2 = 0;
+			}
+		}
+	}
+	oi->oi_size += OSPFS_BLKSIZE;
+	return 0;
+
 }
 
 
