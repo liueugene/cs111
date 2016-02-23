@@ -765,7 +765,7 @@ add_block(ospfs_inode_t *oi)
 	uint32_t new_block = 0;
 	
 	void *free_block_bitmap;
-	void *indirect, *indirect2;
+	uint32_t *indirect, *indirect2;
 	int32_t index, index2;
 	
 	
@@ -866,7 +866,7 @@ remove_block(ospfs_inode_t *oi)
 	// current number of blocks in file
 	uint32_t n = ospfs_size2nblocks(oi->oi_size);
 
-	void* indirect, indirect2;
+	uint32_t* indirect, *indirect2;
 	int32_t index, index2;
 
 	/* EXERCISE: Your code here */
@@ -902,15 +902,15 @@ remove_block(ospfs_inode_t *oi)
 	} else if (indir2_index(n - 1) == 0) {
 		indirect2 = ospfs_block(oi->oi_indirect2);
 		index = indir_index(n - 1);
-		indirect = ospfs_block((indirect2[index]);
+		indirect = ospfs_block(indirect2[index]);
 		index2 = direct_index(n - 1);
 		free_block(indirect[index2]);
 		indirect[index2] = 0;
 		if ((n - OSPFS_NDIRECT) % (OSPFS_BLKSIZE / 4) == 1) {
-			free(indirect2[index]);
+			free_block(indirect2[index]);
 			indirect2[index] = 0;
 			if (n == OSPFS_NDIRECT + OSPFS_NINDIRECT + 1) {
-				free(oi->oi_indirect2);
+				free_block(oi->oi_indirect2);
 				oi->oi_indirect2 = 0;
 			}
 		}
