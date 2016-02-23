@@ -224,7 +224,7 @@ ospfs_inode_data(ospfs_inode_t *oi, uint32_t offset)
  */
 
 // ospfs_mk_linux_inode(sb, ino)
-//	Linux's in-memory 'struct inode' structure represents disk
+//	Linux's in-m	emory 'struct inode' structure represents disk
 //	objects (files and directories).  Many file systems have their own
 //	notion of inodes on disk, and for such file systems, Linux's
 //	'struct inode's are like a cache of on-disk inodes.
@@ -511,6 +511,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 	//return r;
 }
 
+static int remove_block(ospfs_inode_t *oi);
 
 // ospfs_unlink(dirino, dentry)
 //   This function is called to remove a file.
@@ -549,6 +550,13 @@ ospfs_unlink(struct inode *dirino, struct dentry *dentry)
 
 	od->od_ino = 0;
 	oi->oi_nlink--;
+
+	if (oi->oi_nlink == 0) {
+		while(inode->oi_size != 0) {
+			remove_block(inode);
+		}
+	}
+
 	return 0;
 }
 
@@ -1266,7 +1274,7 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 		return od;
 	}
 	else 
-		return ERR_PTR(-EINVAL); // Replace this line
+		creturn ERR_PTR(-EINVAL); // Replace this line
 }
 
 // ospfs_link(src_dentry, dir, dst_dentry
@@ -1300,8 +1308,27 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 
 static int
 ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dentry) {
-	/* EXERCISE: Your code here. */
-	return -EINVAL;
+	ospfs_inode_t *dir_oi = ospfs_inode(dir->i_ino);
+	uint32_t entry_ino = 0;
+	ospfs_inode_t *file_oi = src_dentry->d_inode->i_ino;
+	ospfs_direntry_t *new_entry = NULL;
+	uint32_t index_off;
+	
+	if (find_direntry(dir_oi, dentry->d_name.name, dentry->d_name.len)) {
+		return -EEXIST;
+	}
+	
+	new_entry = create_blank_direntry(dir_oi);
+	if (IS_ERR(new_entry)) {
+		return PTR_ERR(new_entry);
+	}
+	
+	file_oi->oi_nlink++;
+
+	dst_dentry->d_inode->i_ino = file_oi;
+	memcpy(dst_dentry->d_name.name, src_dentry->d_name.name, src_dentry->d_name.len);
+	dst_dentry->d_name.name[src_dentry->d_name.len] = '\0';
+	
 }
 
 // ospfs_create
