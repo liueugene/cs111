@@ -559,6 +559,7 @@ ospfs_unlink(struct inode *dirino, struct dentry *dentry)
  *
  * EXERCISE: Implement these functions.
  */
+/* Hopefully finished */
 
 // allocate_block()
 //	Use this function to allocate a block.
@@ -581,6 +582,7 @@ static uint32_t
 allocate_block(void)
 {
 	/* EXERCISE: Your code here */
+	/* Hopefully finished */
 	void *bitmap = ospfs_block(OSPFS_FREEMAP_BLK);
 	int count = 1;
 	int i = 2;
@@ -612,6 +614,7 @@ static void
 free_block(uint32_t blockno)
 {
 	/* EXERCISE: Your code here */
+	/* Hopefully finished */
 	void *bitmap = ospfs_block(OSPFS_FREEMAP_BLK + blockno / OSPFS_BLKBITSIZE);
 	bitvector_set(bitmap, blockno % OSPFS_BLKBITSIZE);
 }
