@@ -974,21 +974,20 @@ change_size(ospfs_inode_t *oi, uint32_t new_size)
 	uint32_t old_size = oi->oi_size;
 	int r = 0;
 
-	while (ospfs_size2nblocks(oi->oi_size) < ospfs_size2nblocks(new_size)) {
-	    r = add_block(oi);
-	    if (r != 0)
-	    	return r;
-	}
 	while (ospfs_size2nblocks(oi->oi_size) > ospfs_size2nblocks(new_size)) {
 	        /* EXERCISE: Your code here */
 		r = remove_block(oi);
 		if (r != 0)
 			return r;
 	}
+	while (ospfs_size2nblocks(oi->oi_size) < ospfs_size2nblocks(new_size)) {
+	    r = add_block(oi);
+	    if (r != 0)
+	    	return r;
+	}
 
 	/* EXERCISE: Make sure you update necessary file meta data
 	             and return the proper value. */
-	oi->oi_size = new_size;
 	return 0; // Replace this line
 }
 
@@ -1131,15 +1130,22 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 	// Support files opened with the O_APPEND flag.  To detect O_APPEND,
 	// use struct file's f_flags field and the O_APPEND bit.
 	/* EXERCISE: Your code here */
+	if (filp->f_flags & O_APPEND) {
+		*f_pos = oi->oi_size;
+	}
 
 	// If the user is writing past the end of the file, change the file's
 	// size to accomodate the request.  (Use change_size().)
 	/* EXERCISE: Your code here */
+	if (*f_pos + count > oi->oi_size) {
+		change_size(oi, *f_pos + count);
+	}
 
 	// Copy data block by block
 	while (amount < count && retval >= 0) {
 		uint32_t blockno = ospfs_inode_blockno(oi, *f_pos);
 		uint32_t n;
+		uint32_t index;
 		char *data;
 
 		if (blockno == 0) {
@@ -1154,8 +1160,15 @@ ospfs_write(struct file *filp, const char __user *buffer, size_t count, loff_t *
 		// read user space.
 		// Keep track of the number of bytes moved in 'n'.
 		/* EXERCISE: Your code here */
-		retval = -EIO; // Replace these lines
-		goto done;
+		index = *f_pos % OSPFS_BLKSIZE;
+		n = OSPFS_BLKSIZE - index;
+		if (n > count - amount)
+			n = count - amount;
+		
+		if (copy_from_user(data + index, buffer, n)) {
+			retval = -EFAULT; // Replace these lines
+			goto done;
+		}
 
 		buffer += n;
 		amount += n;
