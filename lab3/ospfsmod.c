@@ -453,7 +453,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 *
 		 * EXERCISE: Your code here */
 		 /* Hopefully finished -C */
-		if (f_pos - 2 >= dir_oi->size) {
+		if (f_pos - 2 >= dir_oi->oi_size) {
 			r = 1;		/* Fix me! */
 			break;		/* Fix me! */
 		}
