@@ -726,8 +726,8 @@ add_block(ospfs_inode_t *oi)
 	/* EXERCISE: Your code here */
 	uint32_t new_allocated_indirect = 0; //may not be necessary, TA defined variables
 	uint32_t new_allocated_indrect2 = 0; //could use allocated array defined above
-	unit32_t new_block = 0;
-	unit32_t *block_ptr = NULL;
+	uint32_t new_block = 0;
+	uint32_t *block_ptr = NULL;
 	
 	if (n == OSPFS_MAXFILEBLKS) {
 		//TODO
@@ -757,6 +757,15 @@ add_block(ospfs_inode_t *oi)
 	return -EIO; // Replace this line
 }
 
+static void
+zero_out_block(uint32_t blockno)
+{
+	int i;
+	uint32_t *block_ptr = ospfs_block(blockno);
+	for (i = 0; i < OSPFS_BLKSIZE; i++) {
+		block_ptr[i] = 0;
+	}
+}
 
 // remove_block(ospfs_inode_t *oi)
 //   Removes a single data block from the end of a file, freeing
