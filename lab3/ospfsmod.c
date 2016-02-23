@@ -1309,12 +1309,17 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 static int
 ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dentry) {
 	ospfs_inode_t *dir_oi = ospfs_inode(dir->i_ino);
-	uint32_t entry_ino = 0;
-	ospfs_inode_t *file_oi = src_dentry->d_inode->i_ino;
+	uint32_t src_ino = src_dentry->d_inode->i_ino;
+	/* EXERCISE: Your code here. */
+	ospfs_inode_t *file_oi = NULL;
 	ospfs_direntry_t *new_entry = NULL;
 	uint32_t index_off;
 	
-	if (find_direntry(dir_oi, dentry->d_name.name, dentry->d_name.len)) {
+	if (dst_dentry->d_name.len > OSPFS_MAXNAMELEN) {
+		return -ENAMETOOLONG;
+	}
+	
+	if (find_direntry(dir_oi, dst_dentry->d_name.name, dst_dentry->d_name.len)) {
 		return -EEXIST;
 	}
 	
@@ -1323,11 +1328,16 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 		return PTR_ERR(new_entry);
 	}
 	
+	file_oi = ospfs_inode(src_ino);
+	if (file_oi == NULL) {
+		return -EIO;
+	}
+	
 	file_oi->oi_nlink++;
 
-	dst_dentry->d_inode->i_ino = file_oi;
-	memcpy(dst_dentry->d_name.name, src_dentry->d_name.name, src_dentry->d_name.len);
-	dst_dentry->d_name.name[src_dentry->d_name.len] = '\0';
+	new_entry->od_ino = src_ino;
+	memcpy(new_entry->od_name, dst_dentry->d_name.name, dst_dentry->d_name.len);
+	new_entry->od_name[dentry->d_name.len] = '\0';
 	
 }
 
