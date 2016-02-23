@@ -658,11 +658,15 @@ zero_out_block(uint32_t blockno)
 //	       block, -1 if it does not.
 //
 // EXERCISE: Fill in this function.
+ /* Hopefully finished */
 
 static int32_t
 indir2_index(uint32_t b)
 {
-	// Your code here.
+
+	if (b >= OSPFS_NDIRECT + OSPFS_NINDIRECT && b < OSPFS_MAXFILEBLKS) {
+		return 0;
+	}
 	return -1;
 }
 
@@ -681,7 +685,12 @@ indir2_index(uint32_t b)
 static int32_t
 indir_index(uint32_t b)
 {
-	// Your code here.
+	if (b >= OSPFS_NDIRECT && b < OSPFS_NDIRECT + OSPFS_NINDIRECT) {
+		return 0;
+	}
+	else if (b >= OSPFS_NDIRECT + OSPFS_NINDIRECT && b < OSPFS_MAXFILEBLKS) {
+		return ((b - OSPFS_NDIRECT + OSPFS_NINDIRECT) / (OSPFS_BLKSIZE / 4));
+	}
 	return -1;
 }
 
@@ -698,8 +707,10 @@ indir_index(uint32_t b)
 static int32_t
 direct_index(uint32_t b)
 {
-	// Your code here.
-	return -1;
+	if (b < OSPFS_NDIRECT) {
+		return b;
+	}
+	return ((b - OSPFS_NDIRECT) % (OSPFS_BLKSIZE / 4));
 }
 
 
