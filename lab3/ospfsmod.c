@@ -772,9 +772,7 @@ add_block(ospfs_inode_t *oi)
 	if (n == OSPFS_MAXFILEBLKS) {
 		return -ENOSPC;
 	}
-	
-	free_block_bitmap = ospfs_block(OSPFS_FREEMAP_BLK);
-	
+		
 	new_block = allocate_block();
 	if (new_block) {
 		zero_out_block(new_block);
@@ -782,7 +780,7 @@ add_block(ospfs_inode_t *oi)
 		return -ENOSPC;
 	}
 	
-	if (n > OSPFS_NDIRECT + OSPFS_NINDIRECT) {
+	if (n >= OSPFS_NDIRECT + OSPFS_NINDIRECT) {
 		//need to allocate a new indirect block
 		if (n == OSPFS_NDIRECT + OSPFS_NINDIRECT) {
 			//allocate a new indirect^2 block
@@ -804,6 +802,8 @@ add_block(ospfs_inode_t *oi)
 			if (!allocated[0]) {
 				free_block(new_block);
 				free_block(allocated[1]);
+				if (n == OSPFS_NDIRECT + OSPFS_NINDIRECT)
+					oi->oi_indirect2 = 0;
 				return -ENOSPC;
 			}
 			zero_out_block(allocated[0]);
@@ -927,7 +927,7 @@ remove_block(ospfs_inode_t *oi)
 		free_block(oi->oi_direct[n - 1]);
 		oi->oi_direct[n - 1] = 0;
 	}
-	oi->oi_size += OSPFS_BLKSIZE;
+	oi->oi_size -= OSPFS_BLKSIZE;
 	return 0;
 
 }
