@@ -693,7 +693,7 @@ indir_index(uint32_t b)
 		return 0;
 	}
 	else if (b >= OSPFS_NDIRECT + OSPFS_NINDIRECT && b < OSPFS_MAXFILEBLKS) {
-		return ((b - OSPFS_NDIRECT + OSPFS_NINDIRECT) / (OSPFS_BLKSIZE / 4));
+		return ((b - (OSPFS_NDIRECT + OSPFS_NINDIRECT)) / (OSPFS_BLKSIZE / 4));
 	}
 	return -1;
 }
@@ -866,7 +866,7 @@ remove_block(ospfs_inode_t *oi)
 	// current number of blocks in file
 	uint32_t n = ospfs_size2nblocks(oi->oi_size);
 
-	void* indirect, indirect2;
+	int* indirect, indirect2;
 	int32_t index, index2;
 
 	/* EXERCISE: Your code here */
@@ -902,7 +902,7 @@ remove_block(ospfs_inode_t *oi)
 	} else if (indir2_index(n - 1) == 0) {
 		indirect2 = ospfs_block(oi->oi_indirect2);
 		index = indir_index(n - 1);
-		indirect = ospfs_block((indirect2[index]);
+		indirect = ospfs_block(indirect2[index]);
 		index2 = direct_index(n - 1);
 		free_block(indirect[index2]);
 		indirect[index2] = 0;
