@@ -1251,8 +1251,22 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 	ospfs_direntry_t *od;
 	
 	od = ospfs_inode_data(dir_oi, 0);
-	
-	return ERR_PTR(-EINVAL); // Replace this line
+	int i = 0;
+
+	for (; i < dir_oi->oi_size, i += OSPFS_DIRENTRY_SIZE) {
+		ospfs_direntry_t *od = ospfs_inode_data(dir_oi, i);
+		if (od->od_ino == 0) {
+			return od;
+		}
+	}
+
+	add_block(dir_oi);
+	ospfs_direntry_t *od = ospfs_inode_data(dir_oi, i);
+	if (od->od_ino == 0) {
+		return od;
+	}
+	else 
+		return ERR_PTR(-EINVAL); // Replace this line
 }
 
 // ospfs_link(src_dentry, dir, dst_dentry
