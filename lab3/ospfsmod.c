@@ -693,7 +693,7 @@ indir_index(uint32_t b)
 		return 0;
 	}
 	else if (b >= OSPFS_NDIRECT + OSPFS_NINDIRECT && b < OSPFS_MAXFILEBLKS) {
-		return ((b - OSPFS_NDIRECT + OSPFS_NINDIRECT) / (OSPFS_BLKSIZE / 4));
+		return ((b - (OSPFS_NDIRECT + OSPFS_NINDIRECT)) / (OSPFS_BLKSIZE / 4));
 	}
 	return -1;
 }
@@ -865,7 +865,6 @@ remove_block(ospfs_inode_t *oi)
 {
 	// current number of blocks in file
 	uint32_t n = ospfs_size2nblocks(oi->oi_size);
-
 	uint32_t* indirect, *indirect2;
 	int32_t index, index2;
 
