@@ -552,8 +552,8 @@ ospfs_unlink(struct inode *dirino, struct dentry *dentry)
 	oi->oi_nlink--;
 
 	if (oi->oi_nlink == 0) {
-		while(inode->oi_size != 0) {
-			remove_block(inode);
+		while(oi->oi_size != 0) {
+			remove_block(oi);
 		}
 	}
 
@@ -842,7 +842,7 @@ add_block(ospfs_inode_t *oi)
 		oi->oi_direct[n] = new_block;
 	}
 	
-	oi->oi_size += OSPFS_BLKSIZE;
+	oi->oi_size = (n + 1) * OSPFS_BLKSIZE;
 	return 0;
 }
 
@@ -934,7 +934,7 @@ remove_block(ospfs_inode_t *oi)
 		free_block(oi->oi_direct[n - 1]);
 		oi->oi_direct[n - 1] = 0;
 	}
-	oi->oi_size -= OSPFS_BLKSIZE;
+	oi->oi_size = (n - 1) * OSPFS_BLKSIZE;
 	return 0;
 
 }
@@ -1257,24 +1257,23 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 
 	/* EXERCISE: Your code here. */
 	ospfs_direntry_t *od;
-	
+	int i;
 	od = ospfs_inode_data(dir_oi, 0);
-	int i = 0;
 
-	for (; i < dir_oi->oi_size, i += OSPFS_DIRENTRY_SIZE) {
-		ospfs_direntry_t *od = ospfs_inode_data(dir_oi, i);
+	for (i = 0; i < dir_oi->oi_size; i += OSPFS_DIRENTRY_SIZE) {
+		od = ospfs_inode_data(dir_oi, i);
 		if (od->od_ino == 0) {
 			return od;
 		}
 	}
 
 	add_block(dir_oi);
-	ospfs_direntry_t *od = ospfs_inode_data(dir_oi, i);
+	od = ospfs_inode_data(dir_oi, i);
 	if (od->od_ino == 0) {
 		return od;
 	}
 	else 
-		creturn ERR_PTR(-EINVAL); // Replace this line
+		return ERR_PTR(-EINVAL); // Replace this line
 }
 
 // ospfs_link(src_dentry, dir, dst_dentry
@@ -1313,7 +1312,6 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 	/* EXERCISE: Your code here. */
 	ospfs_inode_t *file_oi = NULL;
 	ospfs_direntry_t *new_entry = NULL;
-	uint32_t index_off;
 	
 	if (dst_dentry->d_name.len > OSPFS_MAXNAMELEN) {
 		return -ENAMETOOLONG;
@@ -1337,7 +1335,7 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 
 	new_entry->od_ino = src_ino;
 	memcpy(new_entry->od_name, dst_dentry->d_name.name, dst_dentry->d_name.len);
-	new_entry->od_name[dentry->d_name.len] = '\0';
+	new_entry->od_name[dst_dentry->d_name.len] = '\0';
 	
 }
 
@@ -1369,7 +1367,7 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 //   3. Initialize the directory entry and inode.
 //
 //   EXERCISE: Complete this function.
-uint32_t find_free_inode() {
+static uint32_t find_free_inode() {
 	ospfs_inode_t * ptr = ospfs_block(ospfs_super->os_firstinob);
 	int count = 1;
 	int i = 2;
@@ -1378,7 +1376,7 @@ uint32_t find_free_inode() {
 			ptr = ospfs_block(ospfs_super->os_firstinob + count);
 			count++;
 		}
-		if (ptr[i]->oi_nlink == 0) {
+		if (ptr[i].oi_nlink == 0) {
 			return i;
 		}
 	}
