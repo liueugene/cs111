@@ -1337,6 +1337,7 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 	memcpy(new_entry->od_name, dst_dentry->d_name.name, dst_dentry->d_name.len);
 	new_entry->od_name[dst_dentry->d_name.len] = '\0';
 	
+	return 0;
 }
 
 // ospfs_create
