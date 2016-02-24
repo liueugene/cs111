@@ -91,21 +91,21 @@ close FOO;
       '15'
     ],
 
-    [ 'echo foo >> foo.txt ; ln foo.txt gah.txt ; cat gah.txt'
+    [ 'echo foo >> foo.txt ; ln foo.txt gah.txt ; cat gah.txt',
       'foo'
     ],
 
-    [ 'echo blurb >> gah.txt ; cat foo.txt ; rm gah.txt'
-      'foo\nblurb'
+    [ 'echo blurb >> gah.txt ; cat foo.txt ; rm foo.txt ; rm gah.txt',
+      'foo blurb'
     ],
 
-    [ 'ln -s hello.txt thelink ; diff hello.txt thelink && echo Same contents'
+    [ 'ln -s hello.txt thelink ; diff hello.txt thelink && echo Same contents',
       'Same contents'
     ],
 
-    [ 'echo "World" >> hello.txt ; diff hello.txt thelink && echo Same contents ; rm thelink'
+    [ 'echo "World" >> hello.txt ; diff hello.txt thelink && echo Same contents ; rm thelink',
       'Same contents'
-    ]
+    ],
 
 );
 
