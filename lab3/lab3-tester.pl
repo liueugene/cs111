@@ -91,6 +91,22 @@ close FOO;
       '15'
     ],
 
+    [ 'echo foo >> foo.txt ; ln foo.txt gah.txt ; cat gah.txt'
+      'foo'
+    ],
+
+    [ 'echo blurb >> gah.txt ; cat foo.txt ; rm gah.txt'
+      'foo\nblurb'
+    ],
+
+    [ 'ln -s hello.txt thelink ; diff hello.txt thelink && echo Same contents'
+      'Same contents'
+    ],
+
+    [ 'echo "World" >> hello.txt ; diff hello.txt thelink && echo Same contents ; rm thelink'
+      'Same contents'
+    ]
+
 );
 
 my($ntest) = 0;
