@@ -1500,7 +1500,7 @@ ospfs_symlink(struct inode *dir, struct dentry *dentry, const char *symname)
 		return -EIO;
 	}
 	
-	syml_oi->oi_size = dentry->d_name.len;
+	syml_oi->oi_size = strlen(symname);
 	syml_oi->oi_ftype = OSPFS_FTYPE_SYMLINK;
 	syml_oi->oi_nlink = 1;
 	memcpy(syml_oi->oi_symlink, symname, strlen(symname));
