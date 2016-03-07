@@ -9,10 +9,12 @@
 #define THREADS 1
 #define ITERATIONS 2
 #define OPT_YIELD 3
+#define SYNC 4
 
 int no_of_threads = 1;
 int iterations = 1;
 int opt_yield = 0;
+char sync = 0;
 
 long long counter = 0;
 
@@ -56,6 +58,7 @@ int main(int argc, char *argv[])
         {"threads", required_argument, 0, THREADS},
         {"iter", required_argument, 0, ITERATIONS},
         {"yield", required_argument, 0, OPT_YIELD},
+        {"sync", required_argument, 0, SYNC}
         {0, 0, 0, 0}
     };
     
@@ -90,6 +93,13 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Invalid number for opt_yield\n");
                     exit(1);
                 }
+            case SYNC:
+                sync = argv[optind - 1][7];
+                if (sync != 0 && sync != 'm' && sync != 's' && sync != 'c') {
+                    fprintf(stderr, "Invalid sync option\n");
+                    exit(1);
+                }
+                
             default:
             {
             }
