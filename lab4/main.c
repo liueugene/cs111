@@ -47,10 +47,12 @@ void add_spinlock(long long *pointer, long long value) {
 }
 
 void atomic_add(long long *pointer, long long value) {
+    while(__sync_val_compare_and_swap(&lock, 0, 1));
     long long sum = *pointer + value;
     if (opt_yield)
         pthread_yield();
     *pointer = sum;
+    __sync_val_compare_and_swap(&lock, 1, 0);
 }
 
 char* numstring(char** argv, int index, int index2, char *numarray) {
