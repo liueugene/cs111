@@ -14,7 +14,7 @@
 int no_of_threads = 1;
 int iterations = 1;
 int opt_yield = 0;
-char sync = 0;
+char opt_sync = 0;
 pthread_mutex_t pmutex;
 
 long long counter = 0;
@@ -65,11 +65,11 @@ void *add_func()
     int i;
     void (*a_func)(long long *pointer, long long value) = add;
 
-    if (sync == 'm') {
+    if (opt_sync == 'm') {
         a_func = add_pthread_mutex;
-    } else if (sync == 's') {
+    } else if (opt_sync == 's') {
         a_func = add_spinlock;
-    } else if (sync == 'c') {
+    } else if (opt_sync == 'c') {
         a_func = atomic_add;
     }
     
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
         {"threads", required_argument, 0, THREADS},
         {"iter", required_argument, 0, ITERATIONS},
         {"yield", required_argument, 0, OPT_YIELD},
-        {"sync", required_argument, 0, SYNC}
+        {"sync", required_argument, 0, SYNC},
         {0, 0, 0, 0}
     };
     
@@ -126,15 +126,17 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Invalid number for opt_yield\n");
                     exit(1);
                 }
+                break;
             case SYNC:
-                sync = argv[optind - 1][7];
-                if (sync != 0 && sync != 'm' && sync != 's' && sync != 'c') {
+                opt_sync = argv[optind - 1][7];
+                if (opt_sync != 0 && opt_sync != 'm' && opt_sync != 's' && opt_sync != 'c') {
                     fprintf(stderr, "Invalid sync option\n");
                     exit(1);
                 }
-                if (sync == 'm') {
+                if (opt_sync == 'm') {
                     pthread_mutex_init(&pmutex, NULL);
                 }
+                break;
             default:
             {
             }
