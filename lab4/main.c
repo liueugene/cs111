@@ -25,6 +25,27 @@ void add(long long *pointer, long long value) {
     *pointer = sum;
 }
 
+void add_pthread_mutex(long long *pointer, long long value) {
+    long long sum = *pointer + value;
+    if (opt_yield)
+        pthread_yield();
+    *pointer = sum;
+}
+
+void add_spinlock(long long *pointer, long long value) {
+    long long sum = *pointer + value;
+    if (opt_yield)
+        pthread_yield();
+    *pointer = sum;
+}
+
+void atomic_add(long long *pointer, long long value) {
+    long long sum = *pointer + value;
+    if (opt_yield)
+        pthread_yield();
+    *pointer = sum;
+}
+
 char* numstring(char** argv, int index, int index2, char *numarray) {
     int i = 0;
     while (argv[index][index2] != '\0' && i != 32) {
@@ -38,14 +59,23 @@ char* numstring(char** argv, int index, int index2, char *numarray) {
 
 void *add_func()
 {
-    int i;    
+    int i;
+    void (*a_func)(long long *pointer, long long value) = add;
+
+    if (sync == 'm') {
+        a_func = add_pthread_mutex;
+    } else if (sync == 's') {
+        a_func = add_spinlock;
+    } else if (sync == 'c') {
+        a_func = atomic_add;
+    }
     
     for (i = 0; i < iterations; i++) {
-        add(&counter, 1);
+        a_func(&counter, 1);
     }
 
     for (i = 0; i < iterations; i++) {
-        add(&counter, -1);
+        a_func(&counter, -1);
     }
     
     pthread_exit(NULL);

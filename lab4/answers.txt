@@ -1,0 +1,18 @@
+1.1
+
+1. 
+It takes about 500 iterations for there to be a consistent
+ERROR for any amount of threads greater than 1. At this many
+iterations, it is likely that threads will overlap each other
+when they are doings the adds, and some of the adds will be
+ignored, thus making the count not equal 0.
+
+THe number of threads needed to to make the program consistently
+fail depends greatly on the iterations. If your iterations have
+a value less than 10, you can run almost as many threads as you
+would like. The less threads there are, the less likely there
+will be an overlap between them, so it will fail less.
+
+2. If the number of iterations is very low, then each thread
+will run for a significantly short amount of time, so the
+probability of each thread overlapping each other is minimized.
