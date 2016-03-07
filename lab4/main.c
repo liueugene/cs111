@@ -16,7 +16,7 @@ int iterations = 1;
 int opt_yield = 0;
 char opt_sync = 0;
 pthread_mutex_t pmutex;
-int* lock;
+int lock = 0;
 
 
 long long counter = 0;
@@ -38,12 +38,12 @@ void add_pthread_mutex(long long *pointer, long long value) {
 }
 
 void add_spinlock(long long *pointer, long long value) {
-    while(__sync_lock_test_and_set(lock, 1)) {}
+    while(__sync_lock_test_and_set(&lock, 1)) {}
     long long sum = *pointer + value;
     if (opt_yield)
         pthread_yield();
     *pointer = sum;
-    __sync_lock_release(lock, 0);
+    __sync_lock_release(&lock, 0);
 }
 
 void atomic_add(long long *pointer, long long value) {
@@ -139,8 +139,6 @@ int main(int argc, char *argv[])
                 }
                 if (opt_sync == 'm') {
                     pthread_mutex_init(&pmutex, NULL);
-                } else if (sync == 's') {
-                    *lock = 0;
                 }
                 break;
             default:
