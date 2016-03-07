@@ -15,6 +15,7 @@ int no_of_threads = 1;
 int iterations = 1;
 int opt_yield = 0;
 char sync = 0;
+pthread_mutex_t pmutex;
 
 long long counter = 0;
 
@@ -26,10 +27,12 @@ void add(long long *pointer, long long value) {
 }
 
 void add_pthread_mutex(long long *pointer, long long value) {
+    pthread_mutex_lock(&pmutex);
     long long sum = *pointer + value;
     if (opt_yield)
         pthread_yield();
     *pointer = sum;
+    pthread_mutex_unlock(&pmutex);
 }
 
 void add_spinlock(long long *pointer, long long value) {
@@ -129,7 +132,9 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Invalid sync option\n");
                     exit(1);
                 }
-                
+                if (sync == 'm') {
+                    pthread_mutex_init(&pmutex, NULL);
+                }
             default:
             {
             }
