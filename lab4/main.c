@@ -20,8 +20,7 @@ int opt_yield = 0;
 
 long long counter = 0;
 
-char* numstring(char** argv, int index, int index2) {
-    char* numarray[32];
+char* numstring(char** argv, int index, int index2, char *numarray) {
     int i = 0;
     while (argv[index][index2] != '\0' && i != 32) {
         numarray[i] = argv[index][index2];
@@ -32,7 +31,7 @@ char* numstring(char** argv, int index, int index2) {
     return numarray;
 }
 
-void *add_func(int* thread_no)
+void *add_func()
 {
     int i;    
     
@@ -53,7 +52,7 @@ int main(int argc, char *argv[])
     static struct option options[] = {
         {"threads", required_argument, 0, THREADS},
         {"iter", required_argument, 0, ITERATIONS},
-        {"opt_yield", required_argument, 0, OPT_YIELD},
+        {"yield", required_argument, 0, OPT_YIELD},
         {0, 0, 0, 0}
     };
     
@@ -65,31 +64,31 @@ int main(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, "", options, NULL)) != -1) {
     
         char *endptr;
+        char numarray[32];
+        
         switch (opt) {
             case THREADS:
-                no_of_threads = strtol(numstring(argv, optind - 1, 10), &endptr, 10);
+                no_of_threads = strtol(numstring(argv, optind - 1, 10, numarray), &endptr, 10);
                 if (endptr == argv[optind] || no_of_threads < 1) {
                     fprintf(stderr, "Invalid number of threads\n");
                     exit(1);
                 }
                 break;
             case ITERATIONS:
-                iterations = strtol(numstring(argv, optind - 1, 7), &endptr, 10);
+                iterations = strtol(numstring(argv, optind - 1, 7, numarray), &endptr, 10);
                 if (endptr == argv[optind] || iterations < 1) {
                     fprintf(stderr, "Invalid number of iterations\n");
                     exit(1);
                 }
                 break;
             case OPT_YIELD:
-                opt_yield = strtol(numstring(argv, optind - 1, 12), &endptr, 10);
+                opt_yield = strtol(numstring(argv, optind - 1, 8, numarray), &endptr, 10);
                 if (endptr == argv[optind] || (opt_yield != 0 && opt_yield != 1)) {
                     fprintf(stderr, "Invalid number for opt_yield\n");
                     exit(1);
                 }
             default:
             {
-                fprintf(stderr, "Invalid argument\n"); 
-                exit(1); 
             }
         }
     }
@@ -101,7 +100,7 @@ int main(int argc, char *argv[])
     
     //create and run threads
     for (i = 0; i < no_of_threads; i++) {
-        if (pthread_create(&threads[i], NULL, (void* (*)(void *))add_func, &i)) {
+        if (pthread_create(&threads[i], NULL, (void* (*)(void *))add_func, NULL)) {
             fprintf(stderr, "Error creating thread %d.\n", i);
             return 1;
         }

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wno-unused -Werror
+CFLAGS = -g -Wall -Wextra -Wno-unused -Werror -pthread
 
 SOURCES = main.c
 OBJECTS = $(subst .c,.o,$(SOURCES))
@@ -7,4 +7,4 @@ OBJECTS = $(subst .c,.o,$(SOURCES))
 default: addtest
 
 addtest: $(OBJECTS)
-	$(CC) $(FLAGS) -o $@ $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
