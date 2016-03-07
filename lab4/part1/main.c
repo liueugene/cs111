@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
                 break;
             case SYNC:
                 opt_sync = argv[optind - 1][7];
-                if (opt_sync != 0 && opt_sync != 'm' && opt_sync != 's' && opt_sync != 'c') {
+                if (opt_sync != 'm' && opt_sync != 's' && opt_sync != 'c') {
                     fprintf(stderr, "Invalid sync option\n");
                     exit(1);
                 }
