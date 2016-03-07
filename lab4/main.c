@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -9,16 +10,18 @@
 #define ITERATIONS 2
 #define OPT_YIELD 3
 
-void add(long long *pointer, long long value) {
-    long long sum = *pointer + value;
-    *pointer = sum;
-}
-
 int no_of_threads = 1;
 int iterations = 1;
 int opt_yield = 0;
 
 long long counter = 0;
+
+void add(long long *pointer, long long value) {
+    long long sum = *pointer + value;
+    if (opt_yield)
+        pthread_yield();
+    *pointer = sum;
+}
 
 char* numstring(char** argv, int index, int index2, char *numarray) {
     int i = 0;
