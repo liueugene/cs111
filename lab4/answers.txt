@@ -13,6 +13,122 @@ a value less than 10, you can run almost as many threads as you
 would like. The less threads there are, the less likely there
 will be an overlap between them, so it will fail less.
 
-2. If the number of iterations is very low, then each thread
+2.
+If the number of iterations is very low, then each thread
 will run for a significantly short amount of time, so the
 probability of each thread overlapping each other is minimized.
+
+For Graph: (1 thread)
+iterations	per operation
+10		13854	ns
+25		6547	ns
+50		4186	ns
+100		1460	ns
+250		688	ns
+500		287	ns
+1000		139	ns
+2500		81	ns
+5000		33	ns
+10000		22	ns
+25000		12	ns
+50000		8	ns
+100000		7	ns
+250000		6	ns
+500000		6	ns
+1000000		5	ns
+10000000	5	ns
+100000000	5	ns
+
+1.2
+
+1.
+There is less overhead relative to the amount of work that needs
+to be done.
+
+2.
+The correct cost is 5 ns. We know this because we ran with
+1000000+ iterations, we got this value everytime. To find the
+correct cost, we want a really high iteration value so that
+the overhead from creating the threads and such is negligible
+compared to the runtime of the additions and subtractions.
+
+3.
+These runs are so much slower because each thread stops running
+after each add it does, and lets another thread take over.
+This means we are switching between threads a lot, and are
+adding a lot of overhead. The time taken to switch between threads
+after every add operation is where the extra time is coming from.
+
+4.
+No, you cannot get valid timings if we use --yield. This adds
+so much overhead because it causes a thread switch after every add.
+All this overhead will add a lot of extra time and make the
+timings invalid.
+
+
+1.3
+
+1.
+Because there are so few threads, there is less chance for a race
+condition, so the overhead from the locking is minimal and affects
+the time minimally as well. Thus all of them run similarly to the
+original run times.
+
+2.
+As the number of threads rises, there are more race conditions,
+and threads have to wait for one another more often, so there is
+more wait time, and thus the overall speed of the program slows
+down.
+
+3.
+Spinlocks are busy waiters, so they do not suspend when the lock
+is already taken, but instead continually check if the lock has been
+unlocked. This wastes CPU time and increases the time of our proram
+greatly. As more threads are added, this wait time becomes longer and
+thus more expensive.
+
+
+2.1
+
+Explain the variation in time per operation vs the number of
+iterations? How would you propose to correct for this effect?
+
+
+
+2.2
+
+Compare the variation in time per protected operation vs
+the number of threads in Part 2 and in Part 1. Explain the difference.
+
+
+
+2.3
+
+Explain the the change in performance of the synchronized
+methods as a function of the number of threads per list.
+
+
+Explain why threads per list is a more interesting number
+than threads (for this particular measurement).
+
+
+3.1
+
+Why must the mutex be held when pthread_cond_wait is called?
+
+If it is not held, undefined behavior will result, which we
+do not wish to happen.
+
+Why must the mutex be released when the waiting thread is blocked?
+
+
+Why must the mutex be reacquired when the calling thread resumes?
+
+
+Why must this be done inside of pthread_cond_wait? Why can’t the
+caller simply release the mutex before calling pthread_cond_wait?
+
+
+Can this be done in a user-mode implementation of pthread_cond_wait?
+If so, how? If it can only be implemented by a system call, explain why?
+
