@@ -116,14 +116,21 @@ than threads (for this particular measurement).
 
 Why must the mutex be held when pthread_cond_wait is called?
 
-If it is not held, undefined behavior will result, which we
-do not wish to happen.
+If it is not held, another thread could be holding it, so
+when the current thread releases it with pthread_cond_wait,
+a third thread will take control and two threads could be
+accessing critical sections at once. Undefined behavior will result,
+which we do not wish to happen.
 
 Why must the mutex be released when the waiting thread is blocked?
 
+The mutex must be released so that another thread can take control
+and complete the task that the waiting thread is waiting for.
 
 Why must the mutex be reacquired when the calling thread resumes?
 
+The calling thread may access critical sections that we don't want
+it to access unless it holds the mutex.
 
 Why must this be done inside of pthread_cond_wait? Why can’t the
 caller simply release the mutex before calling pthread_cond_wait?
