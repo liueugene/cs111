@@ -31,7 +31,7 @@ char* numstring(char** argv, int index, int index2, char *numarray) {
     return numarray;
 }
 
-void *add_func(int* thread_no)
+void *add_func()
 {
     int i;    
     
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     
     //create and run threads
     for (i = 0; i < no_of_threads; i++) {
-        if (pthread_create(&threads[i], NULL, (void* (*)(void *))add_func, &i)) {
+        if (pthread_create(&threads[i], NULL, (void* (*)(void *))add_func, NULL)) {
             fprintf(stderr, "Error creating thread %d.\n", i);
             return 1;
         }
