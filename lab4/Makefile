@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wno-unused -Werror -pthread
+CFLAGS = -std=c11 -g -Wall -Wextra -Wno-unused -Werror -pthread
 
 ADDTEST_SOURCES = addtest.c
 ADDTEST_OBJECTS = $(subst .c,.o,$(ADDTEST_SOURCES))
