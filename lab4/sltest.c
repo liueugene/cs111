@@ -17,8 +17,8 @@ int no_of_threads = 1;
 int iterations = 1;
 int opt_yield = 0;
 char opt_sync = 0;
-pthread_mutex_t pmutex;
-int lock = 0;
+pthread_mutex_t* pmutex;
+int* lock;
 
 SortedList_t** List;
 char ***rand_strings;
@@ -26,39 +26,54 @@ int list_no = 1;
 
 long long counter = 0;
 
+int list_num(const char* key) {
+    int val = 0;
+    for (int i = 0; i < 7; i++) {
+        val += (int) key[i];
+    }
+    return (val % list_no);
+}
+
 void* list_func(int* thread_no) {
     int i;
+    int index;
     SortedListElement_t* element = malloc(iterations * sizeof(SortedListElement_t));
     for (i = 0; i < iterations; i++) {
         element[i].key = rand_strings[*thread_no][i];
         
+        index = list_num(element[i]->key);
+
         if (opt_sync == 'm')
-            pthread_mutex_lock(&pmutex);
+            pthread_mutex_lock(&pmutex[index]);
         else if (opt_sync == 's')
-            while (__sync_lock_test_and_set(&lock, 1));
+            while (__sync_lock_test_and_set(&lock[index], 1));
             
-        SortedList_insert(List, &element[i]);
+        SortedList_insert(List[index], &element[i]);
         
         if (opt_sync == 'm')
             pthread_mutex_unlock(&pmutex);
         else if (opt_sync == 's')
             __sync_lock_release(&lock, 0);
     }
-    SortedList_length(List);
+    for (i = 0; i < list_no; i++) {
+        SortedList_length(List[i]);
+    }
     
-    for (i = 0; i < iterations; i++) {
+    for (i = 0; i < iterations; i++) {\
+        int index = rand_strings[*thread_no][i];
+
         if (opt_sync == 'm')
-            pthread_mutex_lock(&pmutex);
+            pthread_mutex_lock(&pmutex[index]);
         else if (opt_sync == 's')
-            while (__sync_lock_test_and_set(&lock, 1));
+            while (__sync_lock_test_and_set(&lock[index], 1));
             
-        if (SortedList_delete(SortedList_lookup(List, rand_strings[*thread_no][i])))
+        if (SortedList_delete(SortedList_lookup(List[index], rand_strings[*thread_no][i])))
             fprintf(stderr, "Corrupted linked list\n");
         
         if (opt_sync == 'm')
-            pthread_mutex_unlock(&pmutex);
+            pthread_mutex_unlock(&pmutex[index]);
         else if (opt_sync == 's')
-            __sync_lock_release(&lock, 0);
+            __sync_lock_release(&lock[index], 0);
     }
 
     free(element);
@@ -140,9 +155,6 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Invalid sync option\n");
                     exit(1);
                 }
-                if (opt_sync == 'm') {
-                    pthread_mutex_init(&pmutex, NULL);
-                }
                 break;
             case LISTS:
                 list_no = strtol(numstring(argv, optind - 1, 8, numarray), &endptr, 10);
@@ -157,10 +169,25 @@ int main(int argc, char *argv[])
         }
     }
 
-    List = malloc(sizeof(SortedList_t));
-    List->prev = List;
-    List->next = List;
-    List->key = NULL;
+    List = malloc(list_no * sizeof(SortedList_t*));
+    for (int i = 0; i < list_no; i++) {
+        List[i]->prev = List[i];
+        List[i]->next = List[i];
+        List[i]->key = NULL;
+    }
+    if (opt_sync == 'm') {
+        pmutex = malloc(list_no * sizeof(pthread_mutex_t));
+        for (int i = 0; i < list_no; i++) {
+            pthread_mutex_init(&pmutex[i], NULL);
+        }
+    }
+    else if (opt_sync == 's') {
+        lock = malloc(list_no * sizeof(int))
+        for (int i = 0; i < list_no; i++) {
+            lock[i] = 0;
+        }
+    }
+
     pthread_t threads[no_of_threads];
     struct timespec begin, end;
     
@@ -173,7 +200,7 @@ int main(int argc, char *argv[])
             rand_strings[i][j] = malloc(8 * sizeof(char));
             for (int k = 0; k < 7; k++)
                 rand_strings[i][j][k] = (rand() % 95) + 32;
-            rand_strings[i][j][7] = '\0';
+                rand_strings[i][j][7] = '\0';
         }
     }
     
@@ -218,6 +245,8 @@ int main(int argc, char *argv[])
     }
     free(rand_strings);
     free(List);
+    free(pmutex);
+    free(lock);
     
     exit(0);
 }
