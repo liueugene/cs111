@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     };
     
     long long nsecs;
-    int no_of_ops;
+    long long no_of_ops;
     int opt;
     int i;
     
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
     nsecs = ((end.tv_sec - begin.tv_sec) * 1000000000) + (end.tv_nsec - begin.tv_nsec);
     no_of_ops = no_of_threads * iterations * (iterations/list_no);
     
-    printf("%d threads * %d iterations x (ins + lookup/del) x (%d/2 avg len) = %d operations\n", no_of_threads, iterations, iterations/list_no, no_of_ops);
+    printf("%d threads * %d iterations x (ins + lookup/del) x (%d/2 avg len) = %lld operations\n", no_of_threads, iterations, iterations/list_no, no_of_ops);
     for (int i = 0; i < list_no; i++) {
         counter += SortedList_length(List[i]);
     }
