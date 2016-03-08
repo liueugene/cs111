@@ -20,6 +20,7 @@ pthread_mutex_t pmutex;
 int lock = 0;
 
 SortedList_t* List;
+char ***rand_strings;
 
 
 long long counter = 0;
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
                 }
                 break;
             case OPT_YIELD:
-                opt_yield = = argv[optind - 1][8];
+                opt_yield = &argv[optind - 1][8];
                 if (opt_yield != 'i' && opt_yield != 'd' && opt_yield != 's') {
                     fprintf(stderr, "Invalid sync option\n");
                     exit(1);
@@ -100,7 +101,20 @@ int main(int argc, char *argv[])
     
     int* thread_no = malloc(no_of_threads * sizeof(int));
 
-
+    rand_strings = malloc(no_of_threads * sizeof(char**));
+    for (int i = 0; i < no_of_threads; i++) {
+        rand_strings[i] = malloc(iterations * sizeof(char*));
+        for (int j = 0; j < iterations; j++) {
+            rand_strings[i][j] = malloc(8 * sizeof(char));
+            for (int k = 0; k < 7; k++)
+                rand_strings[i][j][k] = (rand() % 95) + 32;
+            rand_strings[i][j][7] = '\0';
+        }
+    }
+    
+    pthread_t threads[no_of_threads];
+    struct timespec begin, end;
+    
     clock_gettime(CLOCK_REALTIME, &begin);
     
     //create and run threads
@@ -132,6 +146,15 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ERROR: final count = %lld\n", counter);
     }
     printf("elapsed time: %d ns\n", nsecs);
-    printf("per operation: %d ns\n", nsecs / no_of_ops);
+    printf("per operation: %d ns\n", nsecs / no_of_ops);    
+    
+    for (int i = 0; i < no_of_threads; i++) {
+        for (int j = 0; j < iterations; j++) {
+            free(rand_strings[i][j]);
+        }
+        free(rand_strings[i]);
+    }
+    free(rand_strings);
+    
     exit(0);
 }
