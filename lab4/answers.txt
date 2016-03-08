@@ -262,6 +262,34 @@ high to medium amounts of iterations supports this, and is the more reliable
 than the data for low amounts of iterations. Low amounts of iterations is 
 unreliable because the overhead is the majority of the time.
 
+For Graph: (linked list) (4:1 thread to list ratio)
+iterations	per operation
+		1 thread	4 threads	4 threads
+		unprotected	pthread_mutex	spinlock
+10			ns	7046	ns	6798	ns
+100			ns	104	ns	115	ns
+250			ns	85	ns	77	ns
+500			ns	74	ns	65	ns
+1000			ns	73	ns	70	ns
+2500			ns	80	ns	74	ns
+5000			ns	87	ns	79	ns
+10000			ns	93	ns	89	ns
+25000			ns	112	ns	112	ns
+
+For Graph: (linked list) (2:1 thread to list ratio)
+iterations	per operation
+		1 thread	4 threads	4 threads
+		unprotected	pthread_mutex	spinlock
+10			ns	12307	ns	7493	ns
+100			ns	115	ns	113	ns
+250			ns	65	ns	73	ns
+500			ns	40	ns	41	ns
+1000			ns	38	ns	35	ns
+2500			ns	38	ns	35	ns
+5000			ns	39	ns	38	ns
+10000			ns	43	ns	44	ns
+25000			ns	50	ns	48	ns
+
 For Graph: (linked list) (1:1 thread to list ratio)
 iterations	per operation
 		1 thread	4 threads	4 threads
@@ -324,7 +352,10 @@ iterations	per operation
 Explain the the change in performance of the synchronized
 methods as a function of the number of threads per list.
 
-
+As the ratio of threads to lists increases, the time per operation
+decreases because there are more locks available for more resources.
+With higher numbers of lists, threads can hold a lock on one list
+without preventing other threads from doing work on other lists.
 
 Explain why threads per list is a more interesting number
 than threads (for this particular measurement).
@@ -352,6 +383,7 @@ it to access unless it holds the mutex.
 
 Why must this be done inside of pthread_cond_wait? Why can’t the
 caller simply release the mutex before calling pthread_cond_wait?
+
 
 
 Can this be done in a user-mode implementation of pthread_cond_wait?
