@@ -41,7 +41,7 @@ void* list_func(int* thread_no) {
     for (i = 0; i < iterations; i++) {
         element[i].key = rand_strings[*thread_no][i];
         
-        index = list_num(element[i]->key);
+        index = list_num(element[i].key);
 
         if (opt_sync == 'm')
             pthread_mutex_lock(&pmutex[index]);
@@ -51,16 +51,16 @@ void* list_func(int* thread_no) {
         SortedList_insert(List[index], &element[i]);
         
         if (opt_sync == 'm')
-            pthread_mutex_unlock(&pmutex);
+            pthread_mutex_unlock(&pmutex[index]);
         else if (opt_sync == 's')
-            __sync_lock_release(&lock, 0);
+            __sync_lock_release(&lock[index], 0);
     }
     for (i = 0; i < list_no; i++) {
         SortedList_length(List[i]);
     }
     
-    for (i = 0; i < iterations; i++) {\
-        int index = rand_strings[*thread_no][i];
+    for (i = 0; i < iterations; i++) {
+        int index = list_num(rand_strings[*thread_no][i]);
 
         if (opt_sync == 'm')
             pthread_mutex_lock(&pmutex[index]);
@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
         {"iter", required_argument, 0, ITERATIONS},
         {"yield", required_argument, 0, OPT_YIELD},
         {"sync", required_argument, 0, SYNC},
+        {"lists", required_argument, 0, LISTS},
         {0, 0, 0, 0}
     };
     
@@ -182,7 +183,7 @@ int main(int argc, char *argv[])
         }
     }
     else if (opt_sync == 's') {
-        lock = malloc(list_no * sizeof(int))
+        lock = malloc(list_no * sizeof(int));
         for (int i = 0; i < list_no; i++) {
             lock[i] = 0;
         }
@@ -231,8 +232,11 @@ int main(int argc, char *argv[])
     no_of_ops = no_of_threads * iterations * 2;
     
     printf("%d threads * %d iterations x (add + subtract) = %d operations\n", no_of_threads, iterations, no_of_ops);
-    if (SortedList_length(List) != 0) {
-        fprintf(stderr, "ERROR: final count = %d\n", SortedList_length(List));
+    for (int i = 0; i < list_no; i++) {
+        counter += SortedList_length(List[i]);
+    }
+    if (counter != 0) {
+        fprintf(stderr, "ERROR: final count = %lld\n", counter);
     }
     printf("elapsed time: %lld ns\n", nsecs);
     printf("per operation: %lld ns\n", nsecs / no_of_ops);    
