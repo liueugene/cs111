@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <pthread.h>
+#include <stdio.h>
 #include "SortedList.h"
 
 /*
@@ -169,6 +170,7 @@ int SortedList_length(SortedList_t *list) {
 	//SortedListElement_t* next_node = node->next;
 	int count = 0;
 	while (node->key != NULL) {
+                //fprintf(stdout, "%llx: %s\n", (long long unsigned int)node, node->key);
 		if (prev_node->next != node && node->prev != prev_node) {
 			return -1;
 		}

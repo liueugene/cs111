@@ -30,14 +30,34 @@ void* list_func(int* thread_no) {
     SortedListElement_t* element = malloc(iterations * sizeof(SortedListElement_t));
     for (i = 0; i < iterations; i++) {
         element[i].key = rand_strings[*thread_no][i];
+        
+        if (opt_sync == 'm')
+            pthread_mutex_lock(&pmutex);
+        else if (opt_sync == 's')
+            while (__sync_lock_test_and_set(&lock, 1));
+            
         SortedList_insert(List, &element[i]);
+        
+        if (opt_sync == 'm')
+            pthread_mutex_unlock(&pmutex);
+        else if (opt_sync == 's')
+            __sync_lock_release(&lock, 0);
     }
     SortedList_length(List);
+    
     for (i = 0; i < iterations; i++) {
-        SortedList_lookup(List, rand_strings[*thread_no][i]);
-    }
-    for (i = 0; i < iterations; i++) {
-        SortedList_delete(&element[i]);
+        if (opt_sync == 'm')
+            pthread_mutex_lock(&pmutex);
+        else if (opt_sync == 's')
+            while (__sync_lock_test_and_set(&lock, 1));
+            
+        if (SortedList_delete(SortedList_lookup(List, rand_strings[*thread_no][i])))
+            fprintf(stderr, "Corrupted linked list\n");
+        
+        if (opt_sync == 'm')
+            pthread_mutex_unlock(&pmutex);
+        else if (opt_sync == 's')
+            __sync_lock_release(&lock, 0);
     }
 
     free(element);
@@ -63,6 +83,7 @@ int main(int argc, char *argv[])
         {"threads", required_argument, 0, THREADS},
         {"iter", required_argument, 0, ITERATIONS},
         {"yield", required_argument, 0, OPT_YIELD},
+        {"sync", required_argument, 0, SYNC},
         {0, 0, 0, 0}
     };
     
