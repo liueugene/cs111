@@ -1,3 +1,7 @@
+#define _GNU_SOURCE
+#include <pthread.h>
+#include "SortedList.h"
+
 /*
  * SortedList (and SortedListElement)
  *
@@ -108,6 +112,7 @@ int SortedList_delete(SortedListElement_t *element) {
 		pthread_yield();
 	}
 	next_node->prev = prev_node;
+        return 0;
 }
 
 /**
