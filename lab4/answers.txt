@@ -360,6 +360,12 @@ without preventing other threads from doing work on other lists.
 Explain why threads per list is a more interesting number
 than threads (for this particular measurement).
 
+The performance of our program depends on the amount of work available
+for each thread, so the number of threads should be viewed relative to the
+number of lists. For example, having 500 threads and 100 lists will not run
+significantly faster than 5 threads and 1 list because there are not enough
+lists to give to every thread, so every 4 out of 5 threads will sit idly
+waiting for another thread to give up its lock on the list.
 
 3.1
 
