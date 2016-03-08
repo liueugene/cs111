@@ -11,6 +11,7 @@
 #define ITERATIONS 2
 #define OPT_YIELD 3
 #define SYNC 4
+#define LISTS 5
 
 int no_of_threads = 1;
 int iterations = 1;
@@ -19,9 +20,9 @@ char opt_sync = 0;
 pthread_mutex_t pmutex;
 int lock = 0;
 
-SortedList_t* List;
+SortedList_t** List;
 char ***rand_strings;
-
+int list_no = 1;
 
 long long counter = 0;
 
@@ -100,14 +101,14 @@ int main(int argc, char *argv[])
         switch (opt) {
             case THREADS:
                 no_of_threads = strtol(numstring(argv, optind - 1, 10, numarray), &endptr, 10);
-                if (endptr == argv[optind] || no_of_threads < 1) {
+                if (endptr == argv[optind - 1] || no_of_threads < 1) {
                     fprintf(stderr, "Invalid number of threads\n");
                     exit(1);
                 }
                 break;
             case ITERATIONS:
                 iterations = strtol(numstring(argv, optind - 1, 7, numarray), &endptr, 10);
-                if (endptr == argv[optind] || iterations < 1) {
+                if (endptr == argv[optind - 1] || iterations < 1) {
                     fprintf(stderr, "Invalid number of iterations\n");
                     exit(1);
                 }
@@ -141,6 +142,13 @@ int main(int argc, char *argv[])
                 }
                 if (opt_sync == 'm') {
                     pthread_mutex_init(&pmutex, NULL);
+                }
+                break;
+            case LISTS:
+                list_no = strtol(numstring(argv, optind - 1, 8, numarray), &endptr, 10);
+                if (endptr == argv[optind - 1] || list_no < 1) {
+                    fprintf(stderr, "Invalid number of sublists\n");
+                    exit(1);
                 }
                 break;
             default:
