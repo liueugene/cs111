@@ -172,6 +172,7 @@ int main(int argc, char *argv[])
 
     List = malloc(list_no * sizeof(SortedList_t*));
     for (int i = 0; i < list_no; i++) {
+        List[i] = malloc(sizeof(SortedList_t));
         List[i]->prev = List[i];
         List[i]->next = List[i];
         List[i]->key = NULL;
@@ -229,9 +230,9 @@ int main(int argc, char *argv[])
     free(thread_no);
 
     nsecs = ((end.tv_sec - begin.tv_sec) * 1000000000) + (end.tv_nsec - begin.tv_nsec);
-    no_of_ops = no_of_threads * iterations * 2;
+    no_of_ops = no_of_threads * iterations * (iterations/list_no);
     
-    printf("%d threads * %d iterations x (add + subtract) = %d operations\n", no_of_threads, iterations, no_of_ops);
+    printf("%d threads * %d iterations x (ins + lookup/del) x (%d/2 avg len) = %d operations\n", no_of_threads, iterations, iterations/list_no, no_of_ops);
     for (int i = 0; i < list_no; i++) {
         counter += SortedList_length(List[i]);
     }
@@ -248,6 +249,8 @@ int main(int argc, char *argv[])
         free(rand_strings[i]);
     }
     free(rand_strings);
+    for (int i = 0; i < list_no; i++)
+        free(List[i]);
     free(List);
     free(pmutex);
     free(lock);
