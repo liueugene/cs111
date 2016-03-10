@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    clock_gettime(CLOCK_REALTIME, &begin);
+    clock_gettime(CLOCK_MONOTONIC, &begin);
     
     //create and run threads
     for (i = 0; i < no_of_threads; i++) {

@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
     pthread_t threads[no_of_threads];
     struct timespec begin, end;
     
-    clock_gettime(CLOCK_, &begin);
+    clock_gettime(CLOCK_MONOTONIC, &begin);
     
     //create and run threads
     for (i = 0; i < no_of_threads; i++) {

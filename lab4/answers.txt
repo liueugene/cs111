@@ -7,7 +7,7 @@ iterations, it is likely that threads will overlap each other
 when they are doings the adds, and some of the adds will be
 ignored, thus making the count not equal 0.
 
-THe number of threads needed to to make the program consistently
+The number of threads needed to to make the program consistently
 fail depends greatly on the iterations. If your iterations have
 a value less than 10, you can run almost as many threads as you
 would like. The less threads there are, the less likely there
@@ -402,5 +402,10 @@ finished its work and it is ready to receive the condition.
 Can this be done in a user-mode implementation of pthread_cond_wait?
 If so, how? If it can only be implemented by a system call, explain why?
 
+No. A user-mode implementation does not have control over context switches,
+so the caller can be suspended while the condition is met, possibly miss
+it and hang forever. We must use a system call so that the thread will not
+be suspended arbitrarily and ensure it will be woken up when the condition
+is met.
 
 
