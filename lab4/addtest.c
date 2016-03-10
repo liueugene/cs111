@@ -47,12 +47,24 @@ void add_spinlock(long long *pointer, long long value) {
 }
 
 void atomic_add(long long *pointer, long long value) {
+    /*
     while(__sync_val_compare_and_swap(&lock, 0, 1));
     long long sum = *pointer + value;
     if (opt_yield)
         pthread_yield();
     *pointer = sum;
     __sync_val_compare_and_swap(&lock, 1, 0);
+    */
+    long long sum;
+    long long orig;
+    
+    do {
+        orig = *pointer;
+        sum = orig + value;
+        
+        if (opt_yield)
+            pthread_yield();
+    } while (__sync_val_compare_and_swap(pointer, orig, sum) != orig);
 }
 
 char* numstring(char** argv, int index, int index2, char *numarray) {
@@ -95,7 +107,7 @@ int main(int argc, char *argv[])
 {
     static struct option options[] = {
         {"threads", required_argument, 0, THREADS},
-        {"iter", required_argument, 0, ITERATIONS},
+        {"iterations", required_argument, 0, ITERATIONS},
         {"yield", required_argument, 0, OPT_YIELD},
         {"sync", required_argument, 0, SYNC},
         {0, 0, 0, 0}
@@ -152,7 +164,7 @@ int main(int argc, char *argv[])
     pthread_t threads[no_of_threads];
     struct timespec begin, end;
     
-    clock_gettime(CLOCK_REALTIME, &begin);
+    clock_gettime(CLOCK_, &begin);
     
     //create and run threads
     for (i = 0; i < no_of_threads; i++) {
@@ -170,7 +182,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    clock_gettime(CLOCK_REALTIME, &end);
+    clock_gettime(CLOCK_MONOTONIC, &end);
 
     nsecs = ((end.tv_sec - begin.tv_sec) * 1000000000) + (end.tv_nsec - begin.tv_nsec);
     no_of_ops = no_of_threads * iterations * 2;

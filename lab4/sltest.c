@@ -56,7 +56,17 @@ void* list_func(int* thread_no) {
             __sync_lock_release(&lock[index], 0);
     }
     for (i = 0; i < list_no; i++) {
+        if (opt_sync == 'm')
+            pthread_mutex_lock(&pmutex[index]);
+        else if (opt_sync == 's')
+            while (__sync_lock_test_and_set(&lock[index], 1));
+            
         SortedList_length(List[i]);
+        
+        if (opt_sync == 'm')
+            pthread_mutex_unlock(&pmutex[index]);
+        else if (opt_sync == 's')
+            __sync_lock_release(&lock[index], 0);
     }
     
     for (i = 0; i < iterations; i++) {
@@ -97,7 +107,7 @@ int main(int argc, char *argv[])
 {
     static struct option options[] = {
         {"threads", required_argument, 0, THREADS},
-        {"iter", required_argument, 0, ITERATIONS},
+        {"iterations", required_argument, 0, ITERATIONS},
         {"yield", required_argument, 0, OPT_YIELD},
         {"sync", required_argument, 0, SYNC},
         {"lists", required_argument, 0, LISTS},
@@ -225,12 +235,12 @@ int main(int argc, char *argv[])
         }
     }
     
-    clock_gettime(CLOCK_REALTIME, &end);
+    clock_gettime(CLOCK_MONOTONIC, &end);
 
     free(thread_no);
 
     nsecs = ((end.tv_sec - begin.tv_sec) * 1000000000) + (end.tv_nsec - begin.tv_nsec);
-    no_of_ops = (long long) no_of_threads * iterations * (iterations/list_no);
+    no_of_ops = ((long long)no_of_threads * iterations * iterations)/list_no;
     
     printf("%d threads * %d iterations x (ins + lookup/del) x (%d/2 avg len) = %lld operations\n", no_of_threads, iterations, iterations/list_no, no_of_ops);
     for (int i = 0; i < list_no; i++) {
