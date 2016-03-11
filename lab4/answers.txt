@@ -249,6 +249,20 @@ iterations	per operation
 10000		NULL	ns	108	ns	124	ns
 25000		NULL	ns	120	ns	142	ns
 
+We found the "correct" number of iterations needed to be ~500
+
+Threads		per operation
+		unprotected	pthread_mutex	spinlock
+1		6	ns	7	ns	7	ns
+2		NULL	ns	16	ns	9	ns
+3		NULL	ns	23	ns	21	ns
+4		NULL	ns	31	ns	28	ns
+5		NULL	ns	34	ns	32	ns
+6		NULL	ns	43	ns	48	ns
+8		NULL	ns	60	ns	59	ns
+10		NULL	ns	65	ns	64	ns
+16		NULL	ns	117	ns	132	ns
+32		NULL	ns	214	ns	324	ns
 
 2.2
 
@@ -264,7 +278,7 @@ unreliable because the overhead is the majority of the time.
 
 For Graph: (linked list) (4:1 thread to list ratio)
 iterations	per operation
-		1 thread	4 threads	4 threads
+		1 thread	16 threads	16 threads
 		unprotected	pthread_mutex	spinlock
 10			ns	7046	ns	6798	ns
 100			ns	104	ns	115	ns
@@ -278,7 +292,7 @@ iterations	per operation
 
 For Graph: (linked list) (2:1 thread to list ratio)
 iterations	per operation
-		1 thread	4 threads	4 threads
+		1 thread	8 threads	8 threads
 		unprotected	pthread_mutex	spinlock
 10			ns	12307	ns	7493	ns
 100			ns	115	ns	113	ns
@@ -322,7 +336,6 @@ For Graph: (linked list) (1:4 thread to list ratio)
 iterations	per operation
 		1 thread	4 threads	4 threads
 		unprotected	pthread_mutex	spinlock
-10		11661	ns	?	ns	?	ns
 100		114	ns	214	ns	176	ns
 250		30	ns	86	ns	80	ns
 500		12	ns	44	ns	46	ns
@@ -336,7 +349,6 @@ For Graph: (linked list) (1:8 thread to list ratio)
 iterations	per operation
 		1 thread	4 threads	4 threads
 		unprotected	pthread_mutex	spinlock
-10		24663	ns	?	ns	?	ns
 100		241	ns	505	ns	332	ns
 250		53	ns	135	ns	133	ns
 500		18	ns	62	ns	62	ns
@@ -346,6 +358,19 @@ iterations	per operation
 10000		8	ns	15	ns	14	ns
 25000		10	ns	16	ns	16	ns
 
+
+We found the "correct" number of iterations to be ~2000.
+
+thread:list	per operation
+		1 thread	8 threads	8 threads
+		unproctected	pthread_mutex	spinlock
+8:1		NULL	ns		ns		ns
+4:1		NULL	ns		ns		ns
+2:1		NULL	ns		ns		ns
+1:1			ns		ns		ns
+1:2			ns		ns		ns
+1:4			ns		ns		ns
+1:8			ns		ns		ns
 
 2.3
 
