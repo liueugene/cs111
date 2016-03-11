@@ -169,12 +169,35 @@ Threads		per operation
 Compare the variation in time per protected operation vs
 the number of threads in Part 2 and in Part 1. Explain the difference.
 
-The time per operation increases as there are more threads. This
-is because with more threads, there are more chances at race conditions,
-so threads will be waiting on other threads more often. The data for
-high to medium amounts of iterations supports this, and is the more reliable
-than the data for low amounts of iterations. Low amounts of iterations is 
-unreliable because the overhead is the majority of the time.
+Part 1 (pthread_mutex): Peaked at 5 threads (212 ns) and got faster.
+Part 2 (pthread_mutex): gradually increased with thread number.
+
+We believe that the difference of pattern comes from how the
+kernel's scheduling algorithm handles x amount of threads to do
+operations that take y amount of time. For instance, the algorithm
+can be very effective if it runs processes in an order where there
+is very little wait time, and inefficient if it runs processes so
+that they are continually waiting on each other. A lot of factors
+can affect whether this alogorithm is efficient or not, and one of
+those is how long a process will hold the lock. In part 1, the lock
+is held very briefly while in part 2 it is held for a long time.
+This aspect of each part can explain why there is a different pattern
+as they each got different values for the overhead from the scheduling
+algorithm.
+
+Part 1 (spinlock): greatly increased with thread number
+Part 2 (spinlock): gradual increased with thread number
+
+Unlike for pthread_mutex, spinlocks always cause busy waiting, and 
+cause a lot of overhead, but this overhead is consistent, so that
+is why the patterns for part 1 and part 2 are very similar.
+In part 1, the spinlock is called for every add operation,
+where as in part 2, the spinlock is called for every transversal
+of the list. Each transversal is many operations, so the overhead
+from the spinlock is split amount them, so each operation becomes
+cheaper than they were in part 1. In both cases, the spinlock is
+the majority of the time for the operation, but it holds more weight
+in part 1, which is why we have a larger growth in part 1.
 
 We found the "correct" number of iterations to be ~2000.
 
@@ -198,6 +221,8 @@ As the ratio of threads to lists increases, the time per operation
 decreases because there are more locks available for more resources.
 With higher numbers of lists, threads can hold a lock on one list
 without preventing other threads from doing work on other lists.
+If the number of threads was less than the number of lists, it was
+similar to 1:1 as race conditions becomes less likely.
 
 Explain why threads per list is a more interesting number
 than threads (for this particular measurement).
