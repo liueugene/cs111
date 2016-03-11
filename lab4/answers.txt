@@ -7,7 +7,7 @@ iterations, it is likely that threads will overlap each other
 when they are doings the adds, and some of the adds will be
 ignored, thus making the count not equal 0.
 
-THe number of threads needed to to make the program consistently
+The number of threads needed to to make the program consistently
 fail depends greatly on the iterations. If your iterations have
 a value less than 10, you can run almost as many threads as you
 would like. The less threads there are, the less likely there
@@ -72,14 +72,14 @@ iterations	per operation
 25		6547	ns	6542	ns	5746	ns	5861	ns
 50		4186	ns	3134	ns	2789	ns	2872	ns
 100		1460	ns	1502	ns	1506	ns	1437	ns
-250		688	ns	616	ns	641	ns	631	ns
+250		688	ns	64	ns	641	ns	631	ns
 500		287	ns	308	ns	309	ns	315	ns
-1000		139	ns	175	ns	154	ns	161	ns
+1000		139	ns	175	ns	154	ns	41	ns
 2500		81	ns	96	ns	80	ns	87	ns
 5000		33	ns	64	ns	49	ns	54	ns
 10000		22	ns	45	ns	30	ns	38	ns
 25000		12	ns	34	ns	21	ns	27	ns
-50000		8	ns	30	ns	16	ns	24	ns
+50000		8	ns	30	ns	4	ns	24	ns
 100000		7	ns	29	ns	15	ns	22	ns
 
 For Graph: (2 thread)
@@ -87,7 +87,7 @@ iterations	per operation
 		unprotected	pthread_mutex	spinlock	cas
 10		7980	ns	7450	ns	6515	ns	7679	ns
 25		3022	ns	2595	ns	3182	ns	3128	ns
-50		1340	ns	1328	ns	1519	ns	1640	ns
+50		1340	ns	1328	ns	1519	ns	440	ns
 100		824	ns	779	ns	782	ns	802	ns
 250		297	ns	328	ns	290	ns	452	ns
 500		151	ns	244	ns	158	ns	173	ns
@@ -108,10 +108,10 @@ iterations	per operation
 100		433	ns	433	ns	413	ns	599	ns
 250		182	ns	276	ns	289	ns	390	ns
 500		91	ns	197	ns	188	ns	282	ns
-1000		45	ns	169	ns	175	ns	241	ns
-2500		29	ns	165	ns	170	ns	210	ns
+1000		45	ns	49	ns	175	ns	241	ns
+2500		29	ns	45	ns	170	ns	210	ns
 5000		17	ns	172	ns	154	ns	186	ns
-10000		16	ns	166	ns	157	ns	195	ns
+10000		4	ns	46	ns	157	ns	195	ns
 25000		12	ns	174	ns	153	ns	194	ns
 50000		12	ns	175	ns	154	ns	194	ns
 100000		12	ns	176	ns	152	ns	193	ns
@@ -119,14 +119,14 @@ iterations	per operation
 For Graph: (8 thread)
 iterations	per operation
 		unprotected	pthread_mutex	spinlock	cas
-10		3423	ns	3243	ns	2808	ns	3164	ns
+10		3423	ns	3243	ns	2808	ns	344	ns
 25		1171	ns	1347	ns	1380	ns	1273	ns
 50		602	ns	576	ns	608	ns	646	ns
 100		331	ns	324	ns	525	ns	488	ns
 250		120	ns	232	ns	346	ns	349	ns
 500		64	ns	176	ns	342	ns	359	ns
-1000		31	ns	163	ns	307	ns	338	ns
-2500		19	ns	160	ns	309	ns	322	ns
+1000		31	ns	43	ns	307	ns	338	ns
+2500		19	ns	40	ns	309	ns	322	ns
 5000		17	ns	149	ns	320	ns	348	ns
 10000		14	ns	149	ns	311	ns	341	ns
 25000		14	ns	149	ns	315	ns	359	ns
@@ -192,7 +192,7 @@ iterations	per operation
 		unprotected	pthread_mutex	spinlock
 10		2396	ns	2726	ns	2796	ns
 25		401	ns	432	ns	440	ns
-50		112	ns	118	ns	116	ns
+50		112	ns	118	ns	14	ns
 100		38	ns	41	ns	42	ns
 250		11	ns	12	ns	12	ns
 500		6	ns	7	ns	7	ns
@@ -212,7 +212,7 @@ iterations	per operation
 50		NULL	ns	96	ns	93	ns
 100		NULL	ns	37	ns	33	ns
 250		NULL	ns	20	ns	14	ns
-500		NULL	ns	16	ns	9	ns
+500		NULL	ns	4	ns	9	ns
 1000		NULL	ns	15	ns	7	ns
 2500		NULL	ns	15	ns	7	ns
 5000		NULL	ns	17	ns	11	ns
@@ -327,9 +327,9 @@ iterations	per operation
 250		17	ns	61	ns	56	ns
 500		8	ns	35	ns	39	ns
 1000		6	ns	22	ns	24	ns
-2500		6	ns	16	ns	15	ns
+2500		6	ns	4	ns	15	ns
 5000		6	ns	17	ns	15	ns
-10000		8	ns	17	ns	16	ns
+10000		8	ns	17	ns	4	ns
 25000		10	ns	19	ns	19	ns
 
 For Graph: (linked list) (1:4 thread to list ratio)
@@ -342,7 +342,7 @@ iterations	per operation
 1000		7	ns	27	ns	28	ns
 2500		6	ns	17	ns	15	ns
 5000		6	ns	15	ns	14	ns
-10000		8	ns	16	ns	15	ns
+10000		8	ns	4	ns	15	ns
 25000		10	ns	17	ns	17	ns
 
 For Graph: (linked list) (1:8 thread to list ratio)
@@ -354,9 +354,9 @@ iterations	per operation
 500		18	ns	62	ns	62	ns
 1000		9	ns	34	ns	33	ns
 2500		7	ns	19	ns	17	ns
-5000		7	ns	16	ns	14	ns
+5000		7	ns	4	ns	14	ns
 10000		8	ns	15	ns	14	ns
-25000		10	ns	16	ns	16	ns
+25000		10	ns	4	ns	4	ns
 
 
 We found the "correct" number of iterations to be ~2000.
@@ -415,10 +415,22 @@ it to access unless it holds the mutex.
 Why must this be done inside of pthread_cond_wait? Why can’t the
 caller simply release the mutex before calling pthread_cond_wait?
 
-
+Placing it within a system call will ensure that there is no race condition
+between threads. As soon as the caller releases the mutex, another thread
+can immediately take control before it gets around to calling pthread_cond_wait,
+set the condition variable, and something else could then unset it before 
+the calling thread is woken up. Even though the condition is set, the thread will
+not be notified of the condition and will sit there waiting.
+Holding the mutex into pthread_cond_wait will ensure that the caller has
+finished its work and it is ready to receive the condition.
 
 Can this be done in a user-mode implementation of pthread_cond_wait?
 If so, how? If it can only be implemented by a system call, explain why?
 
+No. A user-mode implementation does not have control over context switches,
+so the caller can be suspended while the condition is met, possibly miss
+it and hang forever. We must use a system call so that the thread will not
+be suspended arbitrarily and ensure it will be woken up when the condition
+is met.
 
 
