@@ -1,0 +1,8 @@
+Thread:Lists	pthread_mutex	Spinlock
+8	80	64
+4	62	55
+2	37	34
+1	27	24
+0.5	24	20
+0.25	23	19
+0.125	26	23
