@@ -1,7 +1,7 @@
 Thread:Lists	unprotected	pthread_mutex	Spinlock
-8		80	64
-4		62	55
-2		37	34
+8	?	80	64
+4	?	62	55
+2	?	37	34
 1	6	27	24
 0.5	6	24	20
 0.25	6	23	19

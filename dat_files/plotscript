@@ -26,9 +26,8 @@ set ylabel "Time per operation (ns)"
 set title "sltest - Time per Operation vs Number of Threads"
 plot for [col=2:3] "sl_ThreadsVsOps.dat" using 1:col title columnheader
 
-
 set output "sl_RatioVsOps.pdf"
-set xlabel "Number of threads"
+set xlabel "Thread-to-list ratio"
 set ylabel "Time per operation (ns)"
 set title "sltest - Time per Operation vs Ratio of Threads to Lists"
 plot for [col=2:4] "sl_RatioVsOps.dat" using 1:col title columnheader
