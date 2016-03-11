@@ -1,6 +1,9 @@
+Part 1
+
 1.1
 
-1. 
+1. Why does it take this many threads or iterations?
+
 It takes about 500 iterations for there to be a consistent
 ERROR for any amount of threads greater than 1. At this many
 iterations, it is likely that threads will overlap each other
@@ -11,12 +14,15 @@ The number of threads needed to to make the program consistently
 fail depends greatly on the iterations. If your iterations have
 a value less than 10, you can run almost as many threads as you
 would like. The less threads there are, the less likely there
-will be an overlap between them, so it will fail less.
+will be an overlap between them, so it will fail less. But they all
+consistently fail at the 500 iteration mark.
 
-2.
+2. Why does a significantly smaller number of iterations so seldom fail?
+
 If the number of iterations is very low, then each thread
 will run for a significantly short amount of time, so the
 probability of each thread overlapping each other is minimized.
+
 
 For Graph: (1 thread)
 iterations	per operation
@@ -39,122 +45,78 @@ iterations	per operation
 10000000	5	ns
 100000000	5	ns
 
+
 1.2
 
-1.
+1. Why does the average cost per operation drop with increasing iterations?
+
 There is less overhead relative to the amount of work that needs
 to be done.
 
-2.
+2. How do we know what the “correct” cost is?
+
 The correct cost is 5 ns. We know this because we ran with
 1000000+ iterations, we got this value everytime. To find the
 correct cost, we want a really high iteration value so that
 the overhead from creating the threads and such is negligible
 compared to the runtime of the additions and subtractions.
 
-3.
+3. Why are the --yield runs so much slower? Where is the extra time going?
+
 These runs are so much slower because each thread stops running
 after each add it does, and lets another thread take over.
 This means we are switching between threads a lot, and are
 adding a lot of overhead. The time taken to switch between threads
 after every add operation is where the extra time is coming from.
 
-4.
+4. Can we get valid timings if we are using --yield? How, or why not?
+
 No, you cannot get valid timings if we use --yield. This adds
 so much overhead because it causes a thread switch after every add.
 All this overhead will add a lot of extra time and make the
 timings invalid.
 
-For Graph: (1 thread)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock	cas
-10		13854	ns	22650	ns	14919	ns	14744	ns
-25		6547	ns	6542	ns	5746	ns	5861	ns
-50		4186	ns	3134	ns	2789	ns	2872	ns
-100		1460	ns	1502	ns	1506	ns	1437	ns
-250		688	ns	64	ns	641	ns	631	ns
-500		287	ns	308	ns	309	ns	315	ns
-1000		139	ns	175	ns	154	ns	41	ns
-2500		81	ns	96	ns	80	ns	87	ns
-5000		33	ns	64	ns	49	ns	54	ns
-10000		22	ns	45	ns	30	ns	38	ns
-25000		12	ns	34	ns	21	ns	27	ns
-50000		8	ns	30	ns	4	ns	24	ns
-100000		7	ns	29	ns	15	ns	22	ns
 
-For Graph: (2 thread)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock	cas
-10		7980	ns	7450	ns	6515	ns	7679	ns
-25		3022	ns	2595	ns	3182	ns	3128	ns
-50		1340	ns	1328	ns	1519	ns	440	ns
-100		824	ns	779	ns	782	ns	802	ns
-250		297	ns	328	ns	290	ns	452	ns
-500		151	ns	244	ns	158	ns	173	ns
-1000		83	ns	139	ns	130	ns	145	ns
-2500		45	ns	82	ns	79	ns	76	ns
-5000		25	ns	64	ns	52	ns	65	ns
-10000		17	ns	65	ns	45	ns	62	ns
-25000		10	ns	51	ns	39	ns	59	ns
-50000		9	ns	56	ns	38	ns	58	ns
-100000		8	ns	48	ns	38	ns	58	ns
+We used 100000 iterations, because it will lower overhead without taking
+excessive time to run.
 
-For Graph: (4 thread)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock	cas
-10		4457	ns	4299	ns	4206	ns	4662	ns
-25		1749	ns	1920	ns	1878	ns	1876	ns
-50		890	ns	872	ns	935	ns	865	ns
-100		433	ns	433	ns	413	ns	599	ns
-250		182	ns	276	ns	289	ns	390	ns
-500		91	ns	197	ns	188	ns	282	ns
-1000		45	ns	49	ns	175	ns	241	ns
-2500		29	ns	45	ns	170	ns	210	ns
-5000		17	ns	172	ns	154	ns	186	ns
-10000		4	ns	46	ns	157	ns	195	ns
-25000		12	ns	174	ns	153	ns	194	ns
-50000		12	ns	175	ns	154	ns	194	ns
-100000		12	ns	176	ns	152	ns	193	ns
-
-For Graph: (8 thread)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock	cas
-10		3423	ns	3243	ns	2808	ns	344	ns
-25		1171	ns	1347	ns	1380	ns	1273	ns
-50		602	ns	576	ns	608	ns	646	ns
-100		331	ns	324	ns	525	ns	488	ns
-250		120	ns	232	ns	346	ns	349	ns
-500		64	ns	176	ns	342	ns	359	ns
-1000		31	ns	43	ns	307	ns	338	ns
-2500		19	ns	40	ns	309	ns	322	ns
-5000		17	ns	149	ns	320	ns	348	ns
-10000		14	ns	149	ns	311	ns	341	ns
-25000		14	ns	149	ns	315	ns	359	ns
-50000		13	ns	150	ns	323	ns	357	ns
-100000		12	ns	151	ns	324	ns	360	ns
+Threads		unprotected	pthread_mutex	spinlock	atomic
+1		7	ns	29	ns	15	ns	20	ns
+2		8	ns	48	ns	68	ns	45	ns
+3		13	ns	133	ns	124	ns	75	ns
+4		12	ns	176	ns	152	ns	87	ns
+5		12	ns	212	ns	243	ns	93	ns
+6		13	ns	184	ns	251	ns	104	ns
+8		12	ns	145	ns	331	ns	107	ns
+10		13	ns	139	ns	412	ns	106	ns
+16		13	ns	125	ns	684	ns	115	ns
+32		16	ns	122	ns	1337	ns	150	ns
 
 1.3
 
-1.
+1. Why do all of the options perform similarly for low numbers of threads?
+
 Because there are so few threads, there is less chance for a race
 condition, so the overhead from the locking is minimal and affects
 the time minimally as well. Thus all of them run similarly to the
 original run times.
 
-2.
+2. Why do the three protected operations slow down as the number of threads rises?
+
 As the number of threads rises, there are more race conditions,
 and threads have to wait for one another more often, so there is
 more wait time, and thus the overall speed of the program slows
 down.
 
+3. Why are spin-locks so expensive for large numbers of threads?
 
-
-3.
 Spinlocks are busy waiters, so they do not suspend when the lock
 is already taken, but instead continually check if the lock has been
 unlocked. This wastes CPU time and increases the time of our proram
 greatly. As more threads are added, this wait time becomes longer and
 thus more expensive.
+
+PART 2
 
 For Graph: (1 thread) (linked list)
 iterations	per operation
@@ -187,73 +149,11 @@ time rather than the main process. This way we do not time the creation
 of the threads, but just the operations done by each thread. The overhead
 from the linked list cannot be fixed, unless we change our data structure.
 
-For Graph: (1 thread) (linked list)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock
-10		2396	ns	2726	ns	2796	ns
-25		401	ns	432	ns	440	ns
-50		112	ns	118	ns	14	ns
-100		38	ns	41	ns	42	ns
-250		11	ns	12	ns	12	ns
-500		6	ns	7	ns	7	ns
-1000		5	ns	6	ns	6	ns
-2500		5	ns	6	ns	6	ns
-5000		6	ns	6	ns	6	ns
-10000		8	ns	8	ns	8	ns
-25000		10	ns	10	ns	10	ns
-50000		11	ns	11	ns	11	ns
-100000		11	ns	11	ns	11	ns
-
-For Graph: (2 thread) (linked list)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock
-10		NULL	ns	1464	ns	1535	ns
-25		NULL	ns	233	ns	294	ns
-50		NULL	ns	96	ns	93	ns
-100		NULL	ns	37	ns	33	ns
-250		NULL	ns	20	ns	14	ns
-500		NULL	ns	4	ns	9	ns
-1000		NULL	ns	15	ns	7	ns
-2500		NULL	ns	15	ns	7	ns
-5000		NULL	ns	17	ns	11	ns
-10000		NULL	ns	18	ns	17	ns
-25000		NULL	ns	18	ns	22	ns
-
-For Graph: (4 thread) (linked list)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock
-10		NULL	ns	1222	ns	892	ns
-25		NULL	ns	180	ns	176	ns
-50		NULL	ns	86	ns	72	ns
-100		NULL	ns	52	ns	56	ns
-250		NULL	ns	36	ns	34	ns
-500		NULL	ns	31	ns	28	ns
-1000		NULL	ns	29	ns	32	ns
-2500		NULL	ns	35	ns	37	ns
-5000		NULL	ns	38	ns	41	ns
-10000		NULL	ns	45	ns	51	ns
-25000		NULL	ns	57	ns	53	ns
-
-For Graph: (8 thread) (linked list)
-iterations	per operation
-		unprotected	pthread_mutex	spinlock
-10		NULL	ns	1225	ns	704	ns
-25		NULL	ns	252	ns	263	ns
-50		NULL	ns	70	ns	97	ns
-100		NULL	ns	65	ns	78	ns
-250		NULL	ns	63	ns	58	ns
-500		NULL	ns	63	ns	59	ns
-1000		NULL	ns	71	ns	71	ns
-2500		NULL	ns	79	ns	103	ns
-5000		NULL	ns	88	ns	115	ns
-10000		NULL	ns	108	ns	124	ns
-25000		NULL	ns	120	ns	142	ns
-
-We found the "correct" number of iterations needed to be ~500
+We found the "correct" number of iterations needed to be ~2000
 
 Threads		per operation
 		unprotected	pthread_mutex	spinlock
-1		6	ns	7	ns	7	ns
+1		5	ns	7	ns	7	ns
 2		NULL	ns	16	ns	9	ns
 3		NULL	ns	23	ns	21	ns
 4		NULL	ns	31	ns	28	ns
@@ -276,101 +176,18 @@ high to medium amounts of iterations supports this, and is the more reliable
 than the data for low amounts of iterations. Low amounts of iterations is 
 unreliable because the overhead is the majority of the time.
 
-For Graph: (linked list) (4:1 thread to list ratio)
-iterations	per operation
-		1 thread	16 threads	16 threads
-		unprotected	pthread_mutex	spinlock
-10			ns	7046	ns	6798	ns
-100			ns	104	ns	115	ns
-250			ns	85	ns	77	ns
-500			ns	74	ns	65	ns
-1000			ns	73	ns	70	ns
-2500			ns	80	ns	74	ns
-5000			ns	87	ns	79	ns
-10000			ns	93	ns	89	ns
-25000			ns	112	ns	112	ns
-
-For Graph: (linked list) (2:1 thread to list ratio)
-iterations	per operation
-		1 thread	8 threads	8 threads
-		unprotected	pthread_mutex	spinlock
-10			ns	12307	ns	7493	ns
-100			ns	115	ns	113	ns
-250			ns	65	ns	73	ns
-500			ns	40	ns	41	ns
-1000			ns	38	ns	35	ns
-2500			ns	38	ns	35	ns
-5000			ns	39	ns	38	ns
-10000			ns	43	ns	44	ns
-25000			ns	50	ns	48	ns
-
-For Graph: (linked list) (1:1 thread to list ratio)
-iterations	per operation
-		1 thread	4 threads	4 threads
-		unprotected	pthread_mutex	spinlock
-10		2396	ns	5525	ns	4652	ns
-100		38	ns	94	ns	80	ns
-250		11	ns	48	ns	53	ns
-500		6	ns	31	ns	39	ns
-1000		5	ns	22	ns	28	ns
-2500		5	ns	19	ns	17	ns
-5000		6	ns	20	ns	19	ns
-10000		8	ns	21	ns	21	ns
-25000		10	ns	24	ns	24	ns
-
-For Graph: (linked list) (1:2 thread to list ratio)
-iterations	per operation
-		1 thread	4 threads	4 threads
-		unprotected	pthread_mutex	spinlock
-10		4887	ns	9201	ns	9076	ns
-100		72	ns	133	ns	142	ns
-250		17	ns	61	ns	56	ns
-500		8	ns	35	ns	39	ns
-1000		6	ns	22	ns	24	ns
-2500		6	ns	4	ns	15	ns
-5000		6	ns	17	ns	15	ns
-10000		8	ns	17	ns	4	ns
-25000		10	ns	19	ns	19	ns
-
-For Graph: (linked list) (1:4 thread to list ratio)
-iterations	per operation
-		1 thread	4 threads	4 threads
-		unprotected	pthread_mutex	spinlock
-100		114	ns	214	ns	176	ns
-250		30	ns	86	ns	80	ns
-500		12	ns	44	ns	46	ns
-1000		7	ns	27	ns	28	ns
-2500		6	ns	17	ns	15	ns
-5000		6	ns	15	ns	14	ns
-10000		8	ns	4	ns	15	ns
-25000		10	ns	17	ns	17	ns
-
-For Graph: (linked list) (1:8 thread to list ratio)
-iterations	per operation
-		1 thread	4 threads	4 threads
-		unprotected	pthread_mutex	spinlock
-100		241	ns	505	ns	332	ns
-250		53	ns	135	ns	133	ns
-500		18	ns	62	ns	62	ns
-1000		9	ns	34	ns	33	ns
-2500		7	ns	19	ns	17	ns
-5000		7	ns	4	ns	14	ns
-10000		8	ns	15	ns	14	ns
-25000		10	ns	4	ns	4	ns
-
-
 We found the "correct" number of iterations to be ~2000.
 
 thread:list	per operation
 		1 thread	8 threads	8 threads
 		unproctected	pthread_mutex	spinlock
-8:1		NULL	ns		ns		ns
-4:1		NULL	ns		ns		ns
-2:1		NULL	ns		ns		ns
-1:1			ns		ns		ns
-1:2			ns		ns		ns
-1:4			ns		ns		ns
-1:8			ns		ns		ns
+8:1		NULL	ns	80	ns	64	ns
+4:1		NULL	ns	62	ns	55	ns
+2:1		NULL	ns	37	ns	34	ns
+1:1		6	ns	27	ns	24	ns
+1:2		6	ns	24	ns	20	ns
+1:4		6	ns	23	ns	19	ns
+1:8		7	ns	26	ns	23	ns
 
 2.3
 
@@ -391,6 +208,8 @@ number of lists. For example, having 500 threads and 100 lists will not run
 significantly faster than 5 threads and 1 list because there are not enough
 lists to give to every thread, so every 4 out of 5 threads will sit idly
 waiting for another thread to give up its lock on the list.
+
+Part 3
 
 3.1
 
