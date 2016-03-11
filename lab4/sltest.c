@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
                 }
                 break;
             case ITERATIONS:
-                iterations = strtol(numstring(argv, optind - 1, 7, numarray), &endptr, 10);
+                iterations = strtol(numstring(argv, optind - 1, 13, numarray), &endptr, 10);
                 if (endptr == argv[optind - 1] || iterations < 1) {
                     fprintf(stderr, "Invalid number of iterations\n");
                     exit(1);
